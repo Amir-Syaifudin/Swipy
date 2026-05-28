@@ -2,8 +2,10 @@ package com.example.swipy.data
 
 import android.content.ContentUris
 import android.content.Context
+import android.content.IntentSender
 import android.database.Cursor
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +35,8 @@ class GalleryRepository @Inject constructor(
             MediaStore.Images.Media.BUCKET_DISPLAY_NAME
         )
 
-        val selection = if (bucketName != null) "${MediaStore.Images.Media.BUCKET_DISPLAY_NAME} = ?" else null
+        val selection = if (bucketName != null)
+            "${MediaStore.Images.Media.BUCKET_DISPLAY_NAME} = ?" else null
         val selectionArgs = bucketName?.let { arrayOf(it) }
 
         val cursor: Cursor? = context.contentResolver.query(
@@ -42,20 +45,22 @@ class GalleryRepository @Inject constructor(
         )
 
         cursor?.use {
-            val idCol = it.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-            val nameCol = it.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
-            val sizeCol = it.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
+            val idCol    = it.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+            val nameCol  = it.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+            val sizeCol  = it.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
             val bucketCol = it.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
 
             while (it.moveToNext()) {
-                val id = it.getLong(idCol)
+                val id  = it.getLong(idCol)
                 val uri = ContentUris.withAppendedId(collection, id)
-                photos.add(GalleryPhoto(
-                    uri = uri,
-                    name = it.getString(nameCol) ?: "Photo",
-                    size = it.getLong(sizeCol),
-                    bucket = it.getString(bucketCol) ?: "Unknown"
-                ))
+                photos.add(
+                    GalleryPhoto(
+                        uri    = uri,
+                        name   = it.getString(nameCol) ?: "Photo",
+                        size   = it.getLong(sizeCol),
+                        bucket = it.getString(bucketCol) ?: "Unknown"
+                    )
+                )
             }
         }
         photos
@@ -75,5 +80,29 @@ class GalleryRepository @Inject constructor(
             }
         }
         buckets.sorted()
+    }
+
+    /**
+     * Hapus foto secara permanen dari MediaStore.
+     *
+     * Android 11+ (API 30): Mengembalikan IntentSender → SwipeScreen menampilkan
+     *   system dialog konfirmasi, lalu user menekan OK → foto terhapus.
+     *
+     * Android < 11: Menghapus langsung via ContentResolver (mengembalikan null).
+     */
+    suspend fun deletePhotos(uris: List<Uri>): IntentSender? = withContext(Dispatchers.IO) {
+        if (uris.isEmpty()) return@withContext null
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // API 30+ — sistem akan tampilkan dialog konfirmasi penghapusan
+            MediaStore.createDeleteRequest(context.contentResolver, uris).intentSender
+        } else {
+            // API < 30 — hapus langsung
+            uris.forEach { uri ->
+                try { context.contentResolver.delete(uri, null, null) }
+                catch (e: Exception) { e.printStackTrace() }
+            }
+            null
+        }
     }
 }

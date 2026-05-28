@@ -45,16 +45,37 @@ fun App() {
             SwipeScreen(
                 bucketName = bucketName,
                 onBack = { nav.popBackStack() },
-                onDone = {
-                    nav.navigate("summary") { popUpTo("swipe/{bucketName}") { inclusive = true } }
+                onDone = { deleted, deletedSz, kept, keptSz, fav, favSz ->
+                    nav.navigate(
+                        "summary/$deleted/$deletedSz/$kept/$keptSz/$fav/$favSz"
+                    ) { popUpTo("swipe/{bucketName}") { inclusive = true } }
                 }
             )
         }
 
-        composable("summary") {
-            SummaryScreen {
-                nav.navigate("home") { popUpTo("home") { inclusive = false } }
-            }
+        composable(
+            route = "summary/{deleted}/{deletedSz}/{kept}/{keptSz}/{fav}/{favSz}",
+            arguments = listOf(
+                navArgument("deleted")   { type = NavType.IntType },
+                navArgument("deletedSz") { type = NavType.LongType },
+                navArgument("kept")      { type = NavType.IntType },
+                navArgument("keptSz")    { type = NavType.LongType },
+                navArgument("fav")       { type = NavType.IntType },
+                navArgument("favSz")     { type = NavType.LongType },
+            )
+        ) { back ->
+            val args = back.arguments!!
+            SummaryScreen(
+                deletedCount   = args.getInt("deleted"),
+                deletedSize    = args.getLong("deletedSz"),
+                keptCount      = args.getInt("kept"),
+                keptSize       = args.getLong("keptSz"),
+                favoriteCount  = args.getInt("fav"),
+                favoriteSize   = args.getLong("favSz"),
+                onBack = {
+                    nav.navigate("home") { popUpTo("home") { inclusive = false } }
+                }
+            )
         }
 
         composable("trash") {

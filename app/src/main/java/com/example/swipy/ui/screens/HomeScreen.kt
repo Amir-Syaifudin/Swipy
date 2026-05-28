@@ -43,7 +43,7 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
                 color = DustyBlue
             )
             Text(
-                text = "Galeri bersih, hati senang ✨",
+                text = "Geser. Hapus. Lega.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray
             )

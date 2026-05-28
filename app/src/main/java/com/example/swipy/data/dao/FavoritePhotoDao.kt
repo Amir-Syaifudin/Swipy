@@ -9,6 +9,9 @@ interface FavoritePhotoDao {
     @Query("SELECT * FROM favorite_photos ORDER BY dateAdded DESC")
     fun getAllFlow(): Flow<List<FavoritePhoto>>
 
+    @Query("SELECT * FROM favorite_photos")
+    suspend fun getAll(): List<FavoritePhoto>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(photo: FavoritePhoto)
 

@@ -6,11 +6,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.Folder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,7 +37,7 @@ fun FolderPickerScreen(
                 title = { Text("Pilih Folder", fontWeight = FontWeight.Medium) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = WarmWhite)
@@ -81,7 +82,7 @@ private fun FolderCard(bucketName: String, count: Int, onClick: () -> Unit) {
                     .background(DustyBlue.copy(alpha = 0.12f), RoundedCornerShape(14.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Folder, contentDescription = null, tint = DustyBlue, modifier = Modifier.size(26.dp))
+                Icon(PhosphorIcons.Regular.Folder, contentDescription = null, tint = DustyBlue, modifier = Modifier.size(26.dp))
             }
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {

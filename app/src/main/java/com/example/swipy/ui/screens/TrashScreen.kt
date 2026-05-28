@@ -6,12 +6,13 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.ArrowClockwise
+import com.adamglin.phosphoricons.regular.Trash
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -58,7 +59,7 @@ fun TrashScreen(
             CenterAlignedTopAppBar(
                 title = { Text("Sampah (${photos.size})", fontWeight = FontWeight.Medium) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back") }
                 },
                 actions = {
                     if (photos.isNotEmpty()) {
@@ -122,10 +123,10 @@ private fun TrashPhotoItem(photo: DeletedPhoto, onDelete: () -> Unit, onRestore:
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 IconButton(onClick = onRestore, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.Restore, contentDescription = "Restore", tint = SageGreen, modifier = Modifier.size(18.dp))
+                    Icon(PhosphorIcons.Regular.ArrowClockwise, contentDescription = "Restore", tint = SageGreen, modifier = Modifier.size(18.dp))
                 }
                 IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = SoftPink, modifier = Modifier.size(18.dp))
+                    Icon(PhosphorIcons.Regular.Trash, contentDescription = "Delete", tint = SoftPink, modifier = Modifier.size(18.dp))
                 }
             }
         }

@@ -1,9 +1,7 @@
 package com.example.swipy.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -16,28 +14,33 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.swipy.ui.theme.*
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SummaryScreen(
-    deletedCount: Int = 7,
-    keptCount: Int = 3,
+    deletedCount: Int = 0,
+    deletedSize: Long = 0L,
+    keptCount: Int = 0,
+    keptSize: Long = 0L,
+    favoriteCount: Int = 0,
+    favoriteSize: Long = 0L,
     onBack: () -> Unit = {},
 ) {
-    val aiComments = listOf(
-        "Foto blur ini sudah aman masuk sampah 🗑️",
-        "Duplikat screenshot — pilihan tepat untuk dihapus!",
-        "Foto selfie terbaik sudah tersimpan ❤️",
-        "WhatsApp forwarded image — tidak perlu disimpan",
-        "Momen indah ini layak jadi favorit 🌟",
-        "Foto makanan dari 2 tahun lalu, siap dihapus 😄",
-        "Kenangan liburan tersimpan dengan aman!"
-    )
+    fun formatSize(size: Long): String {
+        val kb = size / 1024.0
+        val mb = kb / 1024.0
+        return when {
+            mb >= 1 -> String.format(Locale.getDefault(), "%.1f MB", mb)
+            kb >= 1 -> String.format(Locale.getDefault(), "%.1f KB", kb)
+            else     -> "$size B"
+        }
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Ringkasan Sesi", fontWeight = FontWeight.Medium) },
+                title = { Text("Ringkasan", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -45,6 +48,29 @@ fun SummaryScreen(
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = WarmWhite)
             )
+        },
+        bottomBar = {
+            Surface(
+                tonalElevation = 4.dp,
+                color = WarmWhite
+            ) {
+                Button(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp)
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = DustyBlue)
+                ) {
+                    Text(
+                        "Selesai",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+            }
         },
         containerColor = WarmWhite
     ) { padding ->
@@ -54,54 +80,93 @@ fun SummaryScreen(
                 .padding(padding)
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(vertical = 12.dp)
+            contentPadding = PaddingValues(vertical = 20.dp)
         ) {
+            // Emoji header
             item {
-                // Stats card
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = DustyBlue.copy(alpha = 0.10f)),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier.padding(20.dp).fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        StatChip(emoji = "🗑", count = deletedCount, label = "Dihapus", color = SoftPink)
-                        VerticalDivider(modifier = Modifier.height(48.dp), color = Color(0xFFE0E0E0))
-                        StatChip(emoji = "❤️", count = keptCount, label = "Disimpan", color = SageGreen)
-                    }
+                    Text("🎉", fontSize = 56.sp)
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Semua foto sudah ditinjau!",
+                        fontSize = 15.sp,
+                        color = Color.Gray
+                    )
+                    Spacer(Modifier.height(20.dp))
                 }
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    "Komentar AI",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp,
-                    color = Color(0xFF2C2C2C)
-                )
             }
 
-            itemsIndexed(aiComments) { idx, comment ->
-                CommentCard(
-                    comment = comment,
-                    accent = when (idx % 3) {
-                        0 -> DustyBlue
-                        1 -> SoftPink
-                        else -> SageGreen
-                    }
-                )
-            }
-
+            // Dihapus
             item {
-                Spacer(Modifier.height(8.dp))
-                Button(
-                    onClick = onBack,
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = DustyBlue)
-                ) {
-                    Text("Kembali ke Beranda")
+                SummaryStatCard(
+                    emoji = "🗑",
+                    title = "Dihapus",
+                    count = deletedCount,
+                    size = formatSize(deletedSize),
+                    color = SoftPink
+                )
+            }
+
+            // Disimpan
+            item {
+                SummaryStatCard(
+                    emoji = "💾",
+                    title = "Disimpan",
+                    count = keptCount,
+                    size = formatSize(keptSize),
+                    color = SageGreen
+                )
+            }
+
+            // Favorit (hanya tampil jika ada)
+            if (favoriteCount > 0) {
+                item {
+                    SummaryStatCard(
+                        emoji = "⭐",
+                        title = "Favorit",
+                        count = favoriteCount,
+                        size = formatSize(favoriteSize),
+                        color = Color(0xFFFFB300)
+                    )
+                }
+            }
+
+            // Total ruang dibebaskan
+            if (deletedSize > 0) {
+                item {
+                    Spacer(Modifier.height(4.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = DustyBlue.copy(alpha = 0.10f)
+                        ),
+                        elevation = CardDefaults.cardElevation(0.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                "💡 Ruang yang dibebaskan",
+                                fontSize = 14.sp,
+                                color = DustyBlue,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                formatSize(deletedSize),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = DustyBlue
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -109,31 +174,49 @@ fun SummaryScreen(
 }
 
 @Composable
-private fun StatChip(emoji: String, count: Int, label: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(emoji, fontSize = 28.sp)
-        Text(count.toString(), fontWeight = FontWeight.Bold, fontSize = 24.sp, color = color)
-        Text(label, fontSize = 13.sp, color = Color.Gray)
-    }
-}
-
-@Composable
-private fun CommentCard(comment: String, accent: Color) {
+private fun SummaryStatCard(
+    emoji: String,
+    title: String,
+    count: Int,
+    size: String,
+    color: Color
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = accent.copy(alpha = 0.08f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.08f)),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
-            Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .offset(y = 6.dp)
-                    .background(accent, shape = androidx.compose.foundation.shape.CircleShape)
-            )
-            Spacer(Modifier.width(12.dp))
-            Text(comment, fontSize = 14.sp, color = Color(0xFF3C3C3C), lineHeight = 20.sp)
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(emoji, fontSize = 28.sp)
+                Spacer(Modifier.width(14.dp))
+                Text(
+                    title,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF2C2C2C)
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    "$count foto",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = color
+                )
+                Text(
+                    size,
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+            }
         }
     }
 }

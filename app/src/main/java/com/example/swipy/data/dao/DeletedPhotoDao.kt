@@ -9,6 +9,9 @@ interface DeletedPhotoDao {
     @Query("SELECT * FROM deleted_photos ORDER BY dateAdded DESC")
     fun getAllFlow(): Flow<List<DeletedPhoto>>
 
+    @Query("SELECT * FROM deleted_photos")
+    suspend fun getAll(): List<DeletedPhoto>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(photo: DeletedPhoto)
 

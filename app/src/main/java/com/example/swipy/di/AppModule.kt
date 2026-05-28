@@ -7,6 +7,7 @@ import com.example.swipy.data.GalleryRepository
 import com.example.swipy.data.UserPreferences
 import com.example.swipy.data.dao.DeletedPhotoDao
 import com.example.swipy.data.dao.FavoritePhotoDao
+import com.example.swipy.data.dao.KeptPhotoDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,6 +31,9 @@ object AppModule {
 
     @Provides
     fun provideFavoritePhotoDao(db: AppDatabase): FavoritePhotoDao = db.favoritePhotoDao()
+
+    @Provides
+    fun provideKeptPhotoDao(db: AppDatabase): KeptPhotoDao = db.keptPhotoDao()
 
     @Provides
     @Singleton

@@ -3,7 +3,6 @@ package com.example.swipy.worker
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.os.Build
 import android.os.Environment
 import android.os.StatFs
 import androidx.core.app.NotificationCompat
@@ -12,7 +11,7 @@ import androidx.work.WorkerParameters
 
 class StorageCheckWorker(
     context: Context,
-    params: WorkerParameters
+    params: WorkerParameters,
 ) : CoroutineWorker(context, params) {
 
     companion object {
@@ -26,7 +25,7 @@ class StorageCheckWorker(
         if (usedPercent >= THRESHOLD_PERCENT) {
             showNotification(
                 title = "Penyimpanan hampir penuh! 📦",
-                message = "Penyimpanan kamu sudah ${usedPercent}% terpakai. Hapus foto dulu yuk!"
+                message = "Penyimpanan kamu sudah $usedPercent% terpakai. Hapus foto dulu yuk!"
             )
         }
         return Result.success()
@@ -43,11 +42,9 @@ class StorageCheckWorker(
     private fun showNotification(title: String, message: String) {
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            nm.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, "Peringatan Penyimpanan", NotificationManager.IMPORTANCE_HIGH)
-            )
-        }
+        nm.createNotificationChannel(
+            NotificationChannel(CHANNEL_ID, "Peringatan Penyimpanan", NotificationManager.IMPORTANCE_HIGH)
+        )
 
         val notif = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_menu_manage)

@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,7 +27,7 @@ import com.example.swipy.ui.viewmodels.FavoritesViewModel
 @Composable
 fun FavoritesScreen(
     onBack: () -> Unit = {},
-    viewModel: FavoritesViewModel = hiltViewModel()
+    viewModel: FavoritesViewModel = hiltViewModel(),
 ) {
     val photos by viewModel.favorites.collectAsState()
 
@@ -36,7 +36,7 @@ fun FavoritesScreen(
             CenterAlignedTopAppBar(
                 title = { Text("Favorit (${photos.size})", fontWeight = FontWeight.Medium) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = WarmWhite)
             )
@@ -60,10 +60,7 @@ fun FavoritesScreen(
                 contentPadding = PaddingValues(vertical = 12.dp)
             ) {
                 items(photos) { photo ->
-                    FavoritePhotoItem(
-                        photo = photo,
-                        onRemove = { viewModel.remove(photo) }
-                    )
+                    FavoritePhotoItem(photo = photo) { viewModel.remove(photo) }
                 }
             }
         }

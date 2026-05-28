@@ -12,7 +12,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FolderPickerViewModel @Inject constructor(
-    private val galleryRepository: GalleryRepository
+    private val galleryRepository: GalleryRepository,
 ) : ViewModel() {
 
     private val _buckets = MutableStateFlow<List<Pair<String, Int>>>(emptyList())

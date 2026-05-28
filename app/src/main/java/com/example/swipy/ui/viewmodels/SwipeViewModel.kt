@@ -25,7 +25,7 @@ data class SwipeAction(val photo: GalleryPhoto, val type: SwipeActionType)
 class SwipeViewModel @Inject constructor(
     private val galleryRepository: GalleryRepository,
     private val deletedPhotoDao: DeletedPhotoDao,
-    private val favoritePhotoDao: FavoritePhotoDao
+    private val favoritePhotoDao: FavoritePhotoDao,
 ) : ViewModel() {
 
     private val _photoList = MutableStateFlow<List<GalleryPhoto>>(emptyList())
@@ -36,9 +36,6 @@ class SwipeViewModel @Inject constructor(
 
     private val _keptCount = MutableStateFlow(0)
     val keptCount: StateFlow<Int> = _keptCount.asStateFlow()
-
-    private val _favoritedCount = MutableStateFlow(0)
-    val favoritedCount: StateFlow<Int> = _favoritedCount.asStateFlow()
 
     private val deleteQueue = mutableListOf<GalleryPhoto>()
     private val actionHistory = mutableListOf<SwipeAction>()
@@ -68,16 +65,15 @@ class SwipeViewModel @Inject constructor(
             favoritePhotoDao.insert(
                 FavoritePhoto(
                     uri = photo.uri.toString(),
-                    name = photo.name
+                    name = photo.name,
                 )
             )
-            _favoritedCount.value += 1
         }
     }
 
     fun onUndo() {
         if (actionHistory.isNotEmpty()) {
-            val lastAction = actionHistory.removeLast()
+            val lastAction = actionHistory.removeAt(actionHistory.lastIndex)
             when (lastAction.type) {
                 SwipeActionType.DELETE -> {
                     deleteQueue.remove(lastAction.photo)

@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,7 +26,7 @@ import com.example.swipy.ui.viewmodels.FolderPickerViewModel
 fun FolderPickerScreen(
     onFolderSelected: (String) -> Unit,
     onBack: () -> Unit = {},
-    viewModel: FolderPickerViewModel = hiltViewModel()
+    viewModel: FolderPickerViewModel = hiltViewModel(),
 ) {
     val buckets by viewModel.buckets.collectAsState()
 
@@ -36,7 +36,7 @@ fun FolderPickerScreen(
                 title = { Text("Pilih Folder", fontWeight = FontWeight.Medium) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = WarmWhite)
@@ -53,7 +53,9 @@ fun FolderPickerScreen(
             contentPadding = PaddingValues(vertical = 12.dp)
         ) {
             items(buckets) { bucket ->
-                FolderCard(bucketName = bucket.first, count = bucket.second, onClick = { onFolderSelected(bucket.first) })
+                FolderCard(bucketName = bucket.first, count = bucket.second) {
+                    onFolderSelected(bucket.first)
+                }
             }
         }
     }

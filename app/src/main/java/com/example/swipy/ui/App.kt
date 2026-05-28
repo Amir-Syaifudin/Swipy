@@ -15,13 +15,17 @@ fun App() {
     NavHost(navController = nav, startDestination = "splash") {
 
         composable("splash") {
-            SplashScreen(onSplashFinished = {
-                nav.navigate("home") { popUpTo("splash") { inclusive = true } }
-            })
+            SplashScreen {
+                nav.navigate("home") {
+                    popUpTo("splash") {
+                        inclusive = true
+                    }
+                }
+            }
         }
 
         composable("home") {
-            HomeScreen(onNavigate = { route -> nav.navigate(route) })
+            HomeScreen { route -> nav.navigate(route) }
         }
 
         composable("folderPicker") {
@@ -29,7 +33,7 @@ fun App() {
                 onFolderSelected = { bucketName -> 
                     nav.navigate("swipe/$bucketName") 
                 },
-                onBack = { nav.popBackStack() }
+                onBack = { nav.popBackStack() },
             )
         }
 
@@ -48,9 +52,9 @@ fun App() {
         }
 
         composable("summary") {
-            SummaryScreen(onBack = {
+            SummaryScreen {
                 nav.navigate("home") { popUpTo("home") { inclusive = false } }
-            })
+            }
         }
 
         composable("trash") {

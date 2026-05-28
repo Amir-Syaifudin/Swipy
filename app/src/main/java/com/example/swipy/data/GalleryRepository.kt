@@ -15,12 +15,12 @@ data class GalleryPhoto(
     val uri: Uri,
     val name: String,
     val size: Long,
-    val bucket: String
+    val bucket: String,
 )
 
 @Singleton
 class GalleryRepository @Inject constructor(
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) {
     suspend fun getPhotos(bucketName: String? = null): List<GalleryPhoto> = withContext(Dispatchers.IO) {
         val photos = mutableListOf<GalleryPhoto>()
@@ -34,7 +34,7 @@ class GalleryRepository @Inject constructor(
         )
 
         val selection = if (bucketName != null) "${MediaStore.Images.Media.BUCKET_DISPLAY_NAME} = ?" else null
-        val selectionArgs = if (bucketName != null) arrayOf(bucketName) else null
+        val selectionArgs = bucketName?.let { arrayOf(it) }
 
         val cursor: Cursor? = context.contentResolver.query(
             collection, projection, selection, selectionArgs,
@@ -74,6 +74,6 @@ class GalleryRepository @Inject constructor(
                 it.getString(col)?.let { name -> buckets.add(name) }
             }
         }
-        buckets.toList().sorted()
+        buckets.sorted()
     }
 }

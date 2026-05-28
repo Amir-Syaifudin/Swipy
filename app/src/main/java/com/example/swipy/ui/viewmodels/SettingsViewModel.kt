@@ -12,17 +12,17 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
 ) : ViewModel() {
 
     val selectedAccent: StateFlow<Int> = userPreferences.selectedAccent
-        .stateIn(viewModelScope, SharingStarted.Lazily, 0)
+        .stateIn(viewModelScope, SharingStarted.Lazily, initialValue = 0)
 
     val storageReminderEnabled: StateFlow<Boolean> = userPreferences.storageReminderEnabled
-        .stateIn(viewModelScope, SharingStarted.Lazily, true)
+        .stateIn(viewModelScope, SharingStarted.Lazily, initialValue = true)
 
     val weeklyNotifEnabled: StateFlow<Boolean> = userPreferences.weeklyNotifEnabled
-        .stateIn(viewModelScope, SharingStarted.Lazily, true)
+        .stateIn(viewModelScope, SharingStarted.Lazily, initialValue = true)
 
     fun setAccent(accentIndex: Int) {
         viewModelScope.launch {

@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TrashViewModel @Inject constructor(
-    private val deletedPhotoDao: DeletedPhotoDao
+    private val deletedPhotoDao: DeletedPhotoDao,
 ) : ViewModel() {
 
     val trashedPhotos: StateFlow<List<DeletedPhoto>> = deletedPhotoDao.getAllFlow()

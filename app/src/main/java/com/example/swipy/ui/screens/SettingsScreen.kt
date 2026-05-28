@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,7 +25,7 @@ import com.example.swipy.ui.viewmodels.SettingsViewModel
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit = {},
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val selectedAccent by viewModel.selectedAccent.collectAsState()
     val storageReminder by viewModel.storageReminderEnabled.collectAsState()
@@ -42,7 +42,7 @@ fun SettingsScreen(
             CenterAlignedTopAppBar(
                 title = { Text("Pengaturan", fontWeight = FontWeight.Medium) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = WarmWhite)
             )
@@ -72,9 +72,8 @@ fun SettingsScreen(
                                 name = name,
                                 color = color,
                                 description = desc,
-                                isSelected = selectedAccent == idx,
-                                onClick = { viewModel.setAccent(idx) }
-                            )
+                                isSelected = selectedAccent == idx
+                            ) { viewModel.setAccent(idx) }
                         }
                     }
                 }
@@ -96,7 +95,7 @@ fun SettingsScreen(
                             checked = weeklyNotif,
                             onCheck = { viewModel.setWeeklyNotif(it) }
                         )
-                        Divider(modifier = Modifier.padding(horizontal = 16.dp))
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                         ToggleRow(
                             title = "Pengingat penyimpanan",
                             subtitle = "Ketika penyimpanan > 80%",

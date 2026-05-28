@@ -29,7 +29,7 @@ class SwipyApplication : Application() {
             ExistingPeriodicWorkPolicy.KEEP,
             PeriodicWorkRequestBuilder<CleanReminderWorker>(7, TimeUnit.DAYS)
                 .setConstraints(weeklyConstraints)
-                .build()
+                .build(),
         )
 
         // Daily storage check
@@ -37,7 +37,7 @@ class SwipyApplication : Application() {
             StorageCheckWorker.WORK_NAME,
             ExistingPeriodicWorkPolicy.KEEP,
             PeriodicWorkRequestBuilder<StorageCheckWorker>(1, TimeUnit.DAYS)
-                .build()
+                .build(),
         )
 
         // Daily trash purge check
@@ -45,7 +45,7 @@ class SwipyApplication : Application() {
             TrashPurgeWorker.WORK_NAME,
             ExistingPeriodicWorkPolicy.KEEP,
             PeriodicWorkRequestBuilder<TrashPurgeWorker>(1, TimeUnit.DAYS)
-                .build()
+                .build(),
         )
     }
 }

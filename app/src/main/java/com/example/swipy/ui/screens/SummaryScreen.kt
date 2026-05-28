@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,7 +22,7 @@ import com.example.swipy.ui.theme.*
 fun SummaryScreen(
     deletedCount: Int = 7,
     keptCount: Int = 3,
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
 ) {
     val aiComments = listOf(
         "Foto blur ini sudah aman masuk sampah 🗑️",
@@ -40,7 +40,7 @@ fun SummaryScreen(
                 title = { Text("Ringkasan Sesi", fontWeight = FontWeight.Medium) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = WarmWhite)
@@ -69,7 +69,7 @@ fun SummaryScreen(
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         StatChip(emoji = "🗑", count = deletedCount, label = "Dihapus", color = SoftPink)
-                        Divider(modifier = Modifier.height(48.dp).width(1.dp), color = Color(0xFFE0E0E0))
+                        VerticalDivider(modifier = Modifier.height(48.dp), color = Color(0xFFE0E0E0))
                         StatChip(emoji = "❤️", count = keptCount, label = "Disimpan", color = SageGreen)
                     }
                 }
@@ -83,11 +83,14 @@ fun SummaryScreen(
             }
 
             itemsIndexed(aiComments) { idx, comment ->
-                CommentCard(comment = comment, accent = when (idx % 3) {
-                    0 -> DustyBlue
-                    1 -> SoftPink
-                    else -> SageGreen
-                })
+                CommentCard(
+                    comment = comment,
+                    accent = when (idx % 3) {
+                        0 -> DustyBlue
+                        1 -> SoftPink
+                        else -> SageGreen
+                    }
+                )
             }
 
             item {

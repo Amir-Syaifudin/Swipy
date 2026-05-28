@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.*
@@ -29,10 +29,10 @@ import com.example.swipy.ui.viewmodels.TrashViewModel
 @Composable
 fun TrashScreen(
     onBack: () -> Unit = {},
-    viewModel: TrashViewModel = hiltViewModel()
+    viewModel: TrashViewModel = hiltViewModel(),
 ) {
     val photos by viewModel.trashedPhotos.collectAsState()
-    var showConfirmDialog by remember { mutableStateOf(false) }
+    var showConfirmDialog by remember { mutableStateOf(value = false) }
 
     if (showConfirmDialog) {
         AlertDialog(
@@ -58,7 +58,7 @@ fun TrashScreen(
             CenterAlignedTopAppBar(
                 title = { Text("Sampah (${photos.size})", fontWeight = FontWeight.Medium) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                 },
                 actions = {
                     if (photos.isNotEmpty()) {
@@ -91,9 +91,8 @@ fun TrashScreen(
                 items(photos) { photo ->
                     TrashPhotoItem(
                         photo = photo,
-                        onDelete = { viewModel.restore(photo) }, // Temporarily just remove from DB as "Delete/Restore"
-                        onRestore = { viewModel.restore(photo) }
-                    )
+                        onDelete = { viewModel.restore(photo) } // Temporarily just remove from DB as "Delete/Restore"
+                    ) { viewModel.restore(photo) }
                 }
             }
         }

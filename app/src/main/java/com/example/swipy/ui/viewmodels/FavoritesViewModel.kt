@@ -13,7 +13,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FavoritesViewModel @Inject constructor(
-    private val favoritePhotoDao: FavoritePhotoDao
+    private val favoritePhotoDao: FavoritePhotoDao,
 ) : ViewModel() {
 
     val favorites: StateFlow<List<FavoritePhoto>> = favoritePhotoDao.getAllFlow()

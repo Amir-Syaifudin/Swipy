@@ -17,15 +17,19 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.swipy.data.model.FavoritePhoto
 import com.example.swipy.ui.theme.*
+import com.example.swipy.ui.viewmodels.FavoritesViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FavoritesScreen(onBack: () -> Unit = {}) {
-    val photos = remember {
-        (1..9).map { PhotoItem("https://picsum.photos/seed/${it + 200}/300/300", "Favorit $it") }.toMutableStateList()
-    }
+fun FavoritesScreen(
+    onBack: () -> Unit = {},
+    viewModel: FavoritesViewModel = hiltViewModel()
+) {
+    val photos by viewModel.favorites.collectAsState()
 
     Scaffold(
         topBar = {
@@ -58,7 +62,7 @@ fun FavoritesScreen(onBack: () -> Unit = {}) {
                 items(photos) { photo ->
                     FavoritePhotoItem(
                         photo = photo,
-                        onRemove = { photos.remove(photo) }
+                        onRemove = { viewModel.remove(photo) }
                     )
                 }
             }
@@ -67,7 +71,7 @@ fun FavoritesScreen(onBack: () -> Unit = {}) {
 }
 
 @Composable
-private fun FavoritePhotoItem(photo: PhotoItem, onRemove: () -> Unit) {
+private fun FavoritePhotoItem(photo: FavoritePhoto, onRemove: () -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

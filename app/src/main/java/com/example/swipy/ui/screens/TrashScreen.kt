@@ -19,15 +19,19 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.example.swipy.data.model.DeletedPhoto
 import com.example.swipy.ui.theme.*
+import com.example.swipy.ui.viewmodels.TrashViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TrashScreen(onBack: () -> Unit = {}) {
-    val photos = remember {
-        (1..12).map { PhotoItem("https://picsum.photos/seed/${it + 100}/300/300", "Foto $it") }.toMutableStateList()
-    }
+fun TrashScreen(
+    onBack: () -> Unit = {},
+    viewModel: TrashViewModel = hiltViewModel()
+) {
+    val photos by viewModel.trashedPhotos.collectAsState()
     var showConfirmDialog by remember { mutableStateOf(false) }
 
     if (showConfirmDialog) {
@@ -36,7 +40,7 @@ fun TrashScreen(onBack: () -> Unit = {}) {
             title = { Text("Konfirmasi Hapus") },
             text = { Text("Semua foto di sampah akan dihapus permanen. Lanjutkan?") },
             confirmButton = {
-                TextButton(onClick = { photos.clear(); showConfirmDialog = false }) {
+                TextButton(onClick = { viewModel.deleteAll(); showConfirmDialog = false }) {
                     Text("Hapus Semua", color = SoftPink)
                 }
             },
@@ -87,8 +91,8 @@ fun TrashScreen(onBack: () -> Unit = {}) {
                 items(photos) { photo ->
                     TrashPhotoItem(
                         photo = photo,
-                        onDelete = { photos.remove(photo) },
-                        onRestore = { photos.remove(photo) }
+                        onDelete = { viewModel.restore(photo) }, // Temporarily just remove from DB as "Delete/Restore"
+                        onRestore = { viewModel.restore(photo) }
                     )
                 }
             }
@@ -97,8 +101,7 @@ fun TrashScreen(onBack: () -> Unit = {}) {
 }
 
 @Composable
-private fun TrashPhotoItem(photo: PhotoItem, onDelete: () -> Unit, onRestore: () -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
+private fun TrashPhotoItem(photo: DeletedPhoto, onDelete: () -> Unit, onRestore: () -> Unit) {
     Card(
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

@@ -17,14 +17,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.swipy.ui.theme.*
+import com.example.swipy.ui.viewmodels.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit = {}) {
-    var selectedAccent by remember { mutableStateOf(0) } // 0=DustyBlue, 1=SoftPink, 2=SageGreen
-    var storageReminder by remember { mutableStateOf(true) }
-    var weeklyNotif by remember { mutableStateOf(true) }
+fun SettingsScreen(
+    onBack: () -> Unit = {},
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
+    val selectedAccent by viewModel.selectedAccent.collectAsState()
+    val storageReminder by viewModel.storageReminderEnabled.collectAsState()
+    val weeklyNotif by viewModel.weeklyNotifEnabled.collectAsState()
 
     val accents = listOf(
         Triple("Dusty Blue", DustyBlue, "Biru pastel tenang"),
@@ -52,7 +57,6 @@ fun SettingsScreen(onBack: () -> Unit = {}) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(vertical = 12.dp)
         ) {
-            // Accent picker
             item {
                 SettingsSectionTitle("Warna Aksen")
                 Spacer(Modifier.height(8.dp))
@@ -69,14 +73,13 @@ fun SettingsScreen(onBack: () -> Unit = {}) {
                                 color = color,
                                 description = desc,
                                 isSelected = selectedAccent == idx,
-                                onClick = { selectedAccent = idx }
+                                onClick = { viewModel.setAccent(idx) }
                             )
                         }
                     }
                 }
             }
 
-            // Notifications
             item {
                 SettingsSectionTitle("Notifikasi")
                 Spacer(Modifier.height(8.dp))
@@ -91,20 +94,19 @@ fun SettingsScreen(onBack: () -> Unit = {}) {
                             title = "Pengingat mingguan",
                             subtitle = "Setiap Senin pukul 10.00",
                             checked = weeklyNotif,
-                            onCheck = { weeklyNotif = it }
+                            onCheck = { viewModel.setWeeklyNotif(it) }
                         )
                         Divider(modifier = Modifier.padding(horizontal = 16.dp))
                         ToggleRow(
                             title = "Pengingat penyimpanan",
                             subtitle = "Ketika penyimpanan > 80%",
                             checked = storageReminder,
-                            onCheck = { storageReminder = it }
+                            onCheck = { viewModel.setStorageReminder(it) }
                         )
                     }
                 }
             }
 
-            // App info
             item {
                 SettingsSectionTitle("Tentang Aplikasi")
                 Spacer(Modifier.height(8.dp))

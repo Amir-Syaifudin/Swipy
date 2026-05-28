@@ -17,26 +17,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.swipy.ui.theme.*
-
-data class PhotoBucketUi(val name: String, val count: Int)
+import com.example.swipy.ui.viewmodels.FolderPickerViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FolderPickerScreen(
-    onFolderSelected: (PhotoBucketUi) -> Unit,
-    onBack: () -> Unit = {}
+    onFolderSelected: (String) -> Unit,
+    onBack: () -> Unit = {},
+    viewModel: FolderPickerViewModel = hiltViewModel()
 ) {
-    // Placeholder bucket list
-    val buckets = remember {
-        listOf(
-            PhotoBucketUi("Camera", 342),
-            PhotoBucketUi("Screenshots", 128),
-            PhotoBucketUi("Downloads", 57),
-            PhotoBucketUi("WhatsApp Images", 891),
-            PhotoBucketUi("Instagram", 214)
-        )
-    }
+    val buckets by viewModel.buckets.collectAsState()
 
     Scaffold(
         topBar = {
@@ -61,14 +53,14 @@ fun FolderPickerScreen(
             contentPadding = PaddingValues(vertical = 12.dp)
         ) {
             items(buckets) { bucket ->
-                FolderCard(bucket = bucket, onClick = { onFolderSelected(bucket) })
+                FolderCard(bucketName = bucket.first, count = bucket.second, onClick = { onFolderSelected(bucket.first) })
             }
         }
     }
 }
 
 @Composable
-private fun FolderCard(bucket: PhotoBucketUi, onClick: () -> Unit) {
+private fun FolderCard(bucketName: String, count: Int, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -91,8 +83,8 @@ private fun FolderCard(bucket: PhotoBucketUi, onClick: () -> Unit) {
             }
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(bucket.name, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = Color(0xFF2C2C2C))
-                Text("${bucket.count} foto", fontSize = 13.sp, color = Color.Gray)
+                Text(bucketName, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = Color(0xFF2C2C2C))
+                Text("$count foto", fontSize = 13.sp, color = Color.Gray)
             }
             Text("→", color = DustyBlue, fontSize = 18.sp)
         }

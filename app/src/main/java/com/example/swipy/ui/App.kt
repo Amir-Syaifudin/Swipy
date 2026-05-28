@@ -1,9 +1,11 @@
 package com.example.swipy.ui
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.swipy.ui.screens.*
 
 @Composable
@@ -24,16 +26,23 @@ fun App() {
 
         composable("folderPicker") {
             FolderPickerScreen(
-                onFolderSelected = { _ -> nav.navigate("swipe") },
+                onFolderSelected = { bucketName -> 
+                    nav.navigate("swipe/$bucketName") 
+                },
                 onBack = { nav.popBackStack() }
             )
         }
 
-        composable("swipe") {
+        composable(
+            route = "swipe/{bucketName}",
+            arguments = listOf(navArgument("bucketName") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val bucketName = backStackEntry.arguments?.getString("bucketName")
             SwipeScreen(
+                bucketName = bucketName,
                 onBack = { nav.popBackStack() },
                 onDone = {
-                    nav.navigate("summary") { popUpTo("swipe") { inclusive = true } }
+                    nav.navigate("summary") { popUpTo("swipe/{bucketName}") { inclusive = true } }
                 }
             )
         }

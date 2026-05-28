@@ -17,12 +17,7 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
     }
-    // Enable version catalogs
-    versionCatalogs {
-        create("libs") {
-            from(files("gradle/libs.versions.toml"))
-        }
-    }
+
 }
 
 rootProject.name = "Swipy"

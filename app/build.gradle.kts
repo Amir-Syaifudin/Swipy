@@ -1,6 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
-    kotlin("android")
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
@@ -74,6 +74,7 @@ dependencies {
 
     // Dependency Injection (Hilt)
     implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
 
     // Core KTX

@@ -69,6 +69,9 @@ class SwipeViewModel @Inject constructor(
             val isToday = isTodaySession
             val actualBucket = if (bucketName == "Hari Ini" || bucketName == "Semua Foto" || bucketName == "Semua Video") null else bucketName
             val photos = galleryRepository.getMedia(mediaType, actualBucket, isToday)
+            
+            // For "Hari Ini" session, we want to see everything today, 
+            // but we still filter out things that were ALREADY swiped (persisted in DB)
             val keptUris = keptPhotoDao.getAll().map { it.uri }.toSet()
             val favUris = favoritePhotoDao.getAll().map { it.uri }.toSet()
             val delUris = deletedPhotoDao.getAll().map { it.uri }.toSet()
@@ -77,6 +80,8 @@ class SwipeViewModel @Inject constructor(
                 val uriStr = photo.uri.toString()
                 uriStr !in keptUris && uriStr !in favUris && uriStr !in delUris
             }
+            
+            // If it's empty but 'photos' wasn't, it means everything was already swiped today
             _photoList.value = filteredPhotos
         }
     }

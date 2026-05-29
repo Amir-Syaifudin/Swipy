@@ -6,9 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +15,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.*
 import com.example.swipy.ui.theme.*
 import com.example.swipy.ui.viewmodels.SettingsViewModel
 
@@ -30,19 +30,15 @@ fun SettingsScreen(
     val selectedAccent by viewModel.selectedAccent.collectAsState()
     val storageReminder by viewModel.storageReminderEnabled.collectAsState()
     val weeklyNotif by viewModel.weeklyNotifEnabled.collectAsState()
-
-    val accents = listOf(
-        Triple("Dusty Blue", DustyBlue, "Biru pastel tenang"),
-        Triple("Soft Pink", SoftPink, "Pink lembut hangat"),
-        Triple("Sage Green", SageGreen, "Hijau alami segar")
-    )
+    val dontShowPicker by viewModel.dontShowModePicker.collectAsState()
+    val defaultMode by viewModel.defaultSwipeMode.collectAsState()
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Pengaturan", fontWeight = FontWeight.Medium) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back") }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = WarmWhite)
             )
@@ -58,7 +54,7 @@ fun SettingsScreen(
             contentPadding = PaddingValues(vertical = 12.dp)
         ) {
             item {
-                SettingsSectionTitle("Warna Aksen")
+                SettingsSectionTitle("Mode Geser")
                 Spacer(Modifier.height(8.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -66,15 +62,22 @@ fun SettingsScreen(
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        accents.forEachIndexed { idx, (name, color, desc) ->
-                            AccentOption(
-                                name = name,
-                                color = color,
-                                description = desc,
-                                isSelected = selectedAccent == idx
-                            ) { viewModel.setAccent(idx) }
-                        }
+                    Column(modifier = Modifier.padding(8.dp)) {
+                        ToggleRow(
+                            title = "Sembunyikan pilihan mode",
+                            subtitle = "Gunakan mode default secara otomatis",
+                            checked = dontShowPicker,
+                            onCheck = { viewModel.setDontShowModePicker(it) }
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                        
+                        SelectionRow(
+                            title = "Mode default",
+                            subtitle = if (defaultMode == "bouncy") "Bouncy (Efek membal)" else "Seamless (Lancar)",
+                            options = listOf("bouncy", "seamless"),
+                            selectedOption = defaultMode,
+                            onOptionSelected = { viewModel.setDefaultSwipeMode(it) }
+                        )
                     }
                 }
             }
@@ -138,32 +141,6 @@ private fun SettingsSectionTitle(title: String) {
 }
 
 @Composable
-private fun AccentOption(name: String, color: Color, description: String, isSelected: Boolean, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 8.dp, horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier.size(36.dp).background(color, shape = CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            if (isSelected) Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-        }
-        Spacer(Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(name, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal, fontSize = 15.sp, color = Color(0xFF2C2C2C))
-            Text(description, fontSize = 12.sp, color = Color.Gray)
-        }
-        if (isSelected) {
-            Box(modifier = Modifier.size(8.dp).background(color, CircleShape))
-        }
-    }
-}
-
-@Composable
 private fun ToggleRow(title: String, subtitle: String, checked: Boolean, onCheck: (Boolean) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
@@ -177,6 +154,80 @@ private fun ToggleRow(title: String, subtitle: String, checked: Boolean, onCheck
             checked = checked,
             onCheckedChange = onCheck,
             colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = DustyBlue)
+        )
+    }
+}
+
+@Composable
+private fun SelectionRow(
+    title: String,
+    subtitle: String,
+    options: List<String>,
+    selectedOption: String,
+    onOptionSelected: (String) -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Pilih Mode Default") },
+            text = {
+                Column {
+                    options.forEach { option ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { 
+                                    onOptionSelected(option)
+                                    showDialog = false
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = option == selectedOption,
+                                onClick = { 
+                                    onOptionSelected(option)
+                                    showDialog = false
+                                },
+                                colors = RadioButtonDefaults.colors(selectedColor = DustyBlue)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = if (option == "bouncy") "Bouncy" else "Seamless",
+                                fontSize = 16.sp,
+                                color = Color(0xFF2C2C2C)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) { Text("Batal", color = DustyBlue) }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp)
+        )
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { showDialog = true }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = Color(0xFF2C2C2C))
+            Text(subtitle, fontSize = 12.sp, color = Color.Gray)
+        }
+        Icon(
+            imageVector = PhosphorIcons.Regular.CaretRight,
+            contentDescription = null,
+            tint = Color.Gray,
+            modifier = Modifier.size(20.dp)
         )
     }
 }

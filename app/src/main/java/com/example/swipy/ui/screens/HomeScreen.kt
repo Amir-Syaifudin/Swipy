@@ -4,11 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Settings
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,7 +23,7 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(WarmWhite)
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
@@ -38,8 +36,8 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
             // Header
             Text(
                 text = "Swipy",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Light,
+                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 48.sp),
+                fontWeight = FontWeight.Bold,
                 color = DustyBlue
             )
             Text(
@@ -49,17 +47,62 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
             )
 
             Spacer(Modifier.height(40.dp))
+            
+            // Bersihkan Hari Ini Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onNavigate("swipe/all?bucketName=Hari Ini") },
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = SageGreen.copy(alpha = 0.15f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(20.dp).fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .background(SageGreen.copy(alpha = 0.2f), RoundedCornerShape(14.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(PhosphorIcons.Regular.Broom, contentDescription = null, tint = SageGreen, modifier = Modifier.size(26.dp))
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column {
+                        Text("Bersihkan Hari Ini", fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = Color(0xFF2C2C2C))
+                        Spacer(Modifier.height(4.dp))
+                        Text("Mulai bersih-bersih foto & video hari ini", fontSize = 13.sp, color = Color.Gray)
+                    }
+                }
+            }
 
-            // Main swipe card
-            HomeModeCard(
-                title = "Mulai Swipe",
-                subtitle = "Pilih folder & bersihkan foto",
-                icon = Icons.Default.AutoAwesome,
-                backgroundColor = DustyBlue.copy(alpha = 0.12f),
-                iconTint = DustyBlue,
-                onClick = { onNavigate("folderPicker") },
-                modifier = Modifier.fillMaxWidth()
-            )
+            Spacer(Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                HomeModeCard(
+                    title = "Swipe Foto",
+                    subtitle = "Bersihkan galeri foto",
+                    icon = PhosphorIcons.Regular.Image,
+                    backgroundColor = DustyBlue.copy(alpha = 0.12f),
+                    iconTint = DustyBlue,
+                    onClick = { onNavigate("folderPicker/photo") },
+                    modifier = Modifier.weight(1f)
+                )
+                HomeModeCard(
+                    title = "Swipe Video",
+                    subtitle = "Bersihkan file video",
+                    icon = PhosphorIcons.Regular.Play,
+                    backgroundColor = Color(0xFF673AB7).copy(alpha = 0.12f),
+                    iconTint = Color(0xFF673AB7),
+                    onClick = { onNavigate("folderPicker/video") },
+                    modifier = Modifier.weight(1f)
+                )
+            }
 
             Spacer(Modifier.height(16.dp))
 
@@ -69,8 +112,8 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
             ) {
                 HomeModeCard(
                     title = "Sampah",
-                    subtitle = "Foto antrian hapus",
-                    icon = Icons.Default.Delete,
+                    subtitle = "Antrian hapus",
+                    icon = PhosphorIcons.Regular.Trash,
                     backgroundColor = SoftPink.copy(alpha = 0.12f),
                     iconTint = SoftPink,
                     onClick = { onNavigate("trash") },
@@ -78,8 +121,8 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
                 )
                 HomeModeCard(
                     title = "Favorit",
-                    subtitle = "Foto yang disimpan",
-                    icon = Icons.Default.Favorite,
+                    subtitle = "Moment terbaik",
+                    icon = PhosphorIcons.Regular.Heart,
                     backgroundColor = SageGreen.copy(alpha = 0.12f),
                     iconTint = SageGreen,
                     onClick = { onNavigate("favorites") },
@@ -91,7 +134,7 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
 
             // Settings
             TextButton(onClick = { onNavigate("settings") }) {
-                Icon(Icons.Default.Settings, contentDescription = null, tint = Color.Gray)
+                Icon(PhosphorIcons.Regular.Gear, contentDescription = null, tint = Color.Gray)
                 Spacer(Modifier.width(8.dp))
                 Text("Pengaturan", color = Color.Gray)
             }

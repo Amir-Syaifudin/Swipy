@@ -18,6 +18,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+// Hold the photo awaiting favorite confirmation
+private var currentPendingPhoto: GalleryPhoto? = null
+
 enum class SwipeActionType { DELETE, KEEP, FAVORITE }
 
 data class SwipeAction(val photo: GalleryPhoto, val type: SwipeActionType)
@@ -51,17 +54,21 @@ class SwipeViewModel @Inject constructor(
     private val _favoriteSize = MutableStateFlow(0L)
     val favoriteSize: StateFlow<Long> = _favoriteSize.asStateFlow()
 
-    // IntentSender yang dikirim ke SwipeScreen untuk menampilkan system dialog hapus
-    private val _pendingDeleteSender = MutableStateFlow<IntentSender?>(null)
-    val pendingDeleteSender: StateFlow<IntentSender?> = _pendingDeleteSender.asStateFlow()
+    // IntentSender yang dikirim ke SwipeScreen untuk menampilkan system dialog
+    private val _pendingFavoriteSender = MutableStateFlow<IntentSender?>(null)
+    val pendingFavoriteSender: StateFlow<IntentSender?> = _pendingFavoriteSender.asStateFlow()
 
     private val deleteQueue  = mutableListOf<GalleryPhoto>()
     private val keptQueue = mutableListOf<GalleryPhoto>()
     private val actionHistory = mutableListOf<SwipeAction>()
+    private var isTodaySession = false
 
-    fun loadPhotos(bucketName: String?) {
+    fun loadPhotos(mediaType: String, bucketName: String?) {
         viewModelScope.launch {
-            val photos = galleryRepository.getPhotos(bucketName)
+            isTodaySession = bucketName == "Hari Ini"
+            val isToday = isTodaySession
+            val actualBucket = if (bucketName == "Hari Ini" || bucketName == "Semua Foto" || bucketName == "Semua Video") null else bucketName
+            val photos = galleryRepository.getMedia(mediaType, actualBucket, isToday)
             val keptUris = keptPhotoDao.getAll().map { it.uri }.toSet()
             val favUris = favoritePhotoDao.getAll().map { it.uri }.toSet()
             val delUris = deletedPhotoDao.getAll().map { it.uri }.toSet()
@@ -80,6 +87,15 @@ class SwipeViewModel @Inject constructor(
         _deletedCount.value += 1
         _deletedSize.value  += photo.size
         actionHistory.add(SwipeAction(photo, SwipeActionType.DELETE))
+        
+        if (isTodaySession) {
+            viewModelScope.launch {
+                deletedPhotoDao.insert(
+                    DeletedPhoto(uri = photo.uri.toString(), name = photo.name, size = photo.size)
+                )
+            }
+        }
+        
         removePhotoFromList(photo)
     }
 
@@ -88,22 +104,47 @@ class SwipeViewModel @Inject constructor(
         _keptCount.value += 1
         _keptSize.value  += photo.size
         actionHistory.add(SwipeAction(photo, SwipeActionType.KEEP))
+        
+        if (isTodaySession) {
+            viewModelScope.launch {
+                keptPhotoDao.insert(KeptPhoto(uri = photo.uri.toString()))
+            }
+        }
+        
         removePhotoFromList(photo)
     }
 
     /** Double tap → favorit + simpan + lanjut */
     fun onDoubleTap(photo: GalleryPhoto) {
+        currentPendingPhoto = photo
         viewModelScope.launch {
-            favoritePhotoDao.insert(
-                FavoritePhoto(uri = photo.uri.toString(), name = photo.name)
-            )
-            _favoriteCount.value += 1
-            _favoriteSize.value  += photo.size
-            _keptCount.value     += 1
-            _keptSize.value      += photo.size
-            actionHistory.add(SwipeAction(photo, SwipeActionType.FAVORITE))
-            removePhotoFromList(photo)
+            // Request system favorite dialog; actual DB insert waits for user confirmation
+            val sender = galleryRepository.toggleFavorite(listOf(photo.uri), true)
+            if (sender != null) {
+                _pendingFavoriteSender.value = sender
+            }
         }
+    }
+    
+    fun onFavoriteConfirmed() {
+        // After user confirms system favorite, persist locally
+        viewModelScope.launch {
+            favoritePhotoDao.insert(FavoritePhoto(uri = currentPendingPhoto?.uri?.toString() ?: return@launch, name = currentPendingPhoto?.name ?: ""))
+        }
+        _favoriteCount.value += 1
+        _favoriteSize.value  += currentPendingPhoto?.size ?: 0L
+        _keptCount.value     += 1
+        _keptSize.value      += currentPendingPhoto?.size ?: 0L
+        currentPendingPhoto?.let { actionHistory.add(SwipeAction(it, SwipeActionType.FAVORITE)) }
+        currentPendingPhoto?.let { removePhotoFromList(it) }
+        _pendingFavoriteSender.value = null
+        currentPendingPhoto = null
+    }
+    
+    fun onFavoriteCancelled() {
+        // User cancelled; do not persist
+        _pendingFavoriteSender.value = null
+        currentPendingPhoto = null
     }
 
     fun onUndo() {
@@ -114,11 +155,21 @@ class SwipeViewModel @Inject constructor(
                     deleteQueue.remove(lastAction.photo)
                     _deletedCount.value -= 1
                     _deletedSize.value  -= lastAction.photo.size
+                    if (isTodaySession) {
+                        viewModelScope.launch {
+                            deletedPhotoDao.delete(DeletedPhoto(uri = lastAction.photo.uri.toString(), name = lastAction.photo.name, size = lastAction.photo.size))
+                        }
+                    }
                 }
                 SwipeActionType.KEEP -> {
                     keptQueue.remove(lastAction.photo)
                     _keptCount.value -= 1
                     _keptSize.value  -= lastAction.photo.size
+                    if (isTodaySession) {
+                        viewModelScope.launch {
+                            keptPhotoDao.delete(KeptPhoto(uri = lastAction.photo.uri.toString()))
+                        }
+                    }
                 }
                 SwipeActionType.FAVORITE -> {
                     viewModelScope.launch {
@@ -136,9 +187,7 @@ class SwipeViewModel @Inject constructor(
 
     /**
      * Panggil saat user menekan "Selesai".
-     * - Simpan metadata ke Room
-     * - Minta system dialog penghapusan (API 30+) → _pendingDeleteSender
-     * - Langsung hapus jika API < 30
+     * - Simpan metadata ke Room (local trash & kept)
      */
     fun commitDeletions() {
         viewModelScope.launch {
@@ -154,29 +203,8 @@ class SwipeViewModel @Inject constructor(
                 )
             }
             keptQueue.clear()
-
-            // Hapus file nyata dari MediaStore
-            val uris = deleteQueue.map { it.uri }
-            val sender = galleryRepository.deletePhotos(uris)
-            if (sender != null) {
-                // API 30+ → kirim ke UI agar bisa tampilkan system dialog
-                _pendingDeleteSender.value = sender
-            } else {
-                // API < 30 → sudah terhapus, kosongkan queue
-                deleteQueue.clear()
-            }
+            deleteQueue.clear()
         }
-    }
-
-    /** Dipanggil setelah user mengkonfirmasi dialog sistem (OK) */
-    fun onDeleteConfirmed() {
-        deleteQueue.clear()
-        _pendingDeleteSender.value = null
-    }
-
-    /** Dipanggil jika user membatalkan dialog sistem */
-    fun onDeleteCancelled() {
-        _pendingDeleteSender.value = null
     }
 
     private fun removePhotoFromList(photo: GalleryPhoto) {

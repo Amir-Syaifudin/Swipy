@@ -24,6 +24,12 @@ class SettingsViewModel @Inject constructor(
     val weeklyNotifEnabled: StateFlow<Boolean> = userPreferences.weeklyNotifEnabled
         .stateIn(viewModelScope, SharingStarted.Lazily, initialValue = true)
 
+    val dontShowModePicker: StateFlow<Boolean> = userPreferences.dontShowModePicker
+        .stateIn(viewModelScope, SharingStarted.Lazily, initialValue = false)
+
+    val defaultSwipeMode: StateFlow<String> = userPreferences.defaultSwipeMode
+        .stateIn(viewModelScope, SharingStarted.Lazily, initialValue = "bouncy")
+
     fun setAccent(accentIndex: Int) {
         viewModelScope.launch {
             userPreferences.setAccent(accentIndex)
@@ -39,6 +45,18 @@ class SettingsViewModel @Inject constructor(
     fun setWeeklyNotif(enabled: Boolean) {
         viewModelScope.launch {
             userPreferences.setWeeklyNotif(enabled)
+        }
+    }
+
+    fun setDontShowModePicker(dontShow: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setDontShowModePicker(dontShow)
+        }
+    }
+
+    fun setDefaultSwipeMode(mode: String) {
+        viewModelScope.launch {
+            userPreferences.setDefaultSwipeMode(mode)
         }
     }
 }

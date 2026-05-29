@@ -6,13 +6,20 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Undo
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.ArrowCounterClockwise
+import com.adamglin.phosphoricons.regular.Trash
+import com.adamglin.phosphoricons.regular.FloppyDisk
+import com.adamglin.phosphoricons.regular.Star
+import com.adamglin.phosphoricons.regular.Play
+import com.adamglin.phosphoricons.regular.MagnifyingGlass
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,24 +32,33 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import coil.request.videoFrameMillis
 import com.example.swipy.data.GalleryPhoto
 import com.example.swipy.ui.theme.*
 import com.example.swipy.ui.viewmodels.SwipeViewModel
 import java.util.Locale
 import kotlin.math.roundToInt
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.viewinterop.AndroidView
+import android.widget.VideoView
+import android.widget.MediaController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwipeScreen(
+    mediaType: String = "photo",
+    swipeMode: String = "bouncy",
     bucketName: String?,
     onBack: () -> Unit = {},
     onDone: (Int, Long, Int, Long, Int, Long) -> Unit = { _, _, _, _, _, _ -> },
     viewModel: SwipeViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(bucketName) {
-        viewModel.loadPhotos(if (bucketName == "Semua Foto") null else bucketName)
+    LaunchedEffect(bucketName, mediaType) {
+        viewModel.loadPhotos(mediaType, if (bucketName == "Semua Foto" || bucketName == "Semua Video") null else bucketName)
     }
 
     val photos         by viewModel.photoList.collectAsState()
@@ -52,7 +68,7 @@ fun SwipeScreen(
     val keptSize       by viewModel.keptSize.collectAsState()
     val favoriteCount  by viewModel.favoriteCount.collectAsState()
     val favoriteSize   by viewModel.favoriteSize.collectAsState()
-    val pendingSender  by viewModel.pendingDeleteSender.collectAsState()
+    val pendingFavoriteSender by viewModel.pendingFavoriteSender.collectAsState()
 
     // Capture stats at the time Selesai is pressed (sebelum navigate)
     var savedStats by remember { mutableStateOf<Array<Long>?>(null) }
@@ -67,27 +83,19 @@ fun SwipeScreen(
         }
     }
 
-    // Launcher untuk system delete dialog (Android 11+)
-    val deleteLauncher = rememberLauncherForActivityResult(
+    val favoriteLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            // User mengkonfirmasi → foto terhapus
-            viewModel.onDeleteConfirmed()
+            viewModel.onFavoriteConfirmed()
         } else {
-            // User membatalkan
-            viewModel.onDeleteCancelled()
-        }
-        // Navigasi ke summary setelah dialog selesai (apapun hasilnya)
-        savedStats?.let { s ->
-            onDone(s[0].toInt(), s[1], s[2].toInt(), s[3], s[4].toInt(), s[5])
+            viewModel.onFavoriteCancelled()
         }
     }
 
-    // Ketika ViewModel menyiapkan IntentSender, launch dialog
-    LaunchedEffect(pendingSender) {
-        pendingSender?.let { sender ->
-            deleteLauncher.launch(
+    LaunchedEffect(pendingFavoriteSender) {
+        pendingFavoriteSender?.let { sender ->
+            favoriteLauncher.launch(
                 IntentSenderRequest.Builder(sender).build()
             )
         }
@@ -101,11 +109,7 @@ fun SwipeScreen(
             favoriteCount.toLong(), favoriteSize
         )
         viewModel.commitDeletions()
-        // Jika tidak ada foto yang dihapus, langsung navigate
-        if (deletedCount == 0) {
-            onDone(deletedCount, deletedSize, keptCount, keptSize, favoriteCount, favoriteSize)
-        }
-        // Jika ada deletions → commitDeletions() akan trigger pendingSender → launcher akan navigate
+        onDone(deletedCount, deletedSize, keptCount, keptSize, favoriteCount, favoriteSize)
     }
 
     Scaffold(
@@ -120,12 +124,12 @@ fun SwipeScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back")
                     }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.onUndo() }) {
-                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = "Undo", tint = DustyBlue)
+                        Icon(PhosphorIcons.Regular.ArrowCounterClockwise, contentDescription = "Undo", tint = DustyBlue)
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = WarmWhite)
@@ -200,38 +204,50 @@ fun SwipeScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        "💾 $keptCount simpan",
-                        color = SageGreen, fontSize = 13.sp, fontWeight = FontWeight.Medium
-                    )
-                    if (favoriteCount > 0) {
-                        Text(
-                            "⭐ $favoriteCount favorit",
-                            color = Color(0xFFFFB300), fontSize = 13.sp, fontWeight = FontWeight.Medium
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(PhosphorIcons.Regular.FloppyDisk, contentDescription = null, tint = SageGreen, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("$keptCount simpan", color = SageGreen, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     }
-                    Text(
-                        "🗑 $deletedCount hapus",
-                        color = SoftPink, fontSize = 13.sp, fontWeight = FontWeight.Medium
-                    )
+                    if (favoriteCount > 0) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(PhosphorIcons.Regular.Star, contentDescription = null, tint = Color(0xFFFFB300), modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("$favoriteCount favorit", color = Color(0xFFFFB300), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(PhosphorIcons.Regular.Trash, contentDescription = null, tint = SoftPink, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("$deletedCount hapus", color = SoftPink, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    }
                 }
 
                 Spacer(Modifier.height(16.dp))
 
-                val currentPhoto = photos.first()
-                key(currentPhoto.uri) {
-                    SwipeablePhotoCard(
-                        photo        = currentPhoto,
-                        modifier     = Modifier.weight(1f),
-                        onSwipeLeft  = { viewModel.onSwipeLeft(currentPhoto) },   // ← Simpan
-                        onSwipeRight = { viewModel.onSwipeRight(currentPhoto) },  // → Hapus
-                        onDoubleTap  = { viewModel.onDoubleTap(currentPhoto) }    // 2× = Favorit
-                    )
+                // Use the first item safely; if list empty show placeholder
+                val currentPhoto = photos.firstOrNull()
+                if (currentPhoto != null) {
+                    key(currentPhoto.uri) {
+                        SwipeablePhotoCard(
+                            photo        = currentPhoto,
+                            swipeMode    = swipeMode,
+                            modifier     = Modifier.weight(1f),
+                            onSwipeLeft  = { viewModel.onSwipeLeft(currentPhoto) },
+                            onSwipeRight = { viewModel.onSwipeRight(currentPhoto) },
+                            onDoubleTap  = { viewModel.onDoubleTap(currentPhoto) }
+                        )
+                    }
+                } else {
+                    // No media available – show empty state
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Tidak ada media", color = Color.Gray)
+                    }
                 }
 
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "← Simpan   |   Hapus →   |   2× ketuk ⭐ Favorit",
+                    "← Simpan   |   Hapus →   |   2× ketuk Favorit",
                     fontSize = 11.sp, color = Color.Gray
                 )
                 Spacer(Modifier.height(8.dp))
@@ -266,6 +282,7 @@ fun SummaryItem(icon: String, label: String, count: Int, size: String, color: Co
 @Composable
 fun SwipeablePhotoCard(
     photo: GalleryPhoto,
+    swipeMode: String,
     modifier: Modifier = Modifier,
     onSwipeLeft: () -> Unit,
     onSwipeRight: () -> Unit,
@@ -274,11 +291,14 @@ fun SwipeablePhotoCard(
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
     var showStar by remember { mutableStateOf(false) }
-    val swipeThreshold = 300f
-
-    val rotation    = (offsetX / 30f).coerceIn(-15f, 15f)
-    val deleteAlpha = ((offsetX - 80f)  / 200f).coerceIn(0f, 1f)
-    val keepAlpha   = ((-offsetX - 80f) / 200f).coerceIn(0f, 1f)
+    var showPreview by remember { mutableStateOf(false) }
+    // Reduce swipe distance for seamless mode to make it easier
+    val swipeThreshold = if (swipeMode == "seamless") 40f else 300f
+    
+    val rotation    = if (swipeMode == "seamless") 0f else (offsetX / 30f).coerceIn(-15f, 15f)
+    // Alpha calculations adapt to swipe mode for easier interaction
+    val deleteAlpha = if (swipeMode == "seamless") ((offsetX - 20f) / 70f).coerceIn(0f, 1f) else ((offsetX - 80f) / 200f).coerceIn(0f, 1f)
+    val keepAlpha   = if (swipeMode == "seamless") ((-offsetX - 20f) / 70f).coerceIn(0f, 1f) else ((-offsetX - 80f) / 200f).coerceIn(0f, 1f)
 
     val starScale = remember { Animatable(0f) }
     val starAlpha = remember { Animatable(0f) }
@@ -291,6 +311,10 @@ fun SwipeablePhotoCard(
             starScale.snapTo(0f)
             showStar = false
         }
+    }
+
+    if (showPreview) {
+        MediaPreviewDialog(photo = photo, onDismiss = { showPreview = false })
     }
 
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -306,14 +330,18 @@ fun SwipeablePhotoCard(
                             when {
                                 offsetX >  swipeThreshold -> onSwipeRight()
                                 offsetX < -swipeThreshold -> onSwipeLeft()
+                                else -> {
+                                    offsetX = 0f
+                                    offsetY = 0f
+                                }
                             }
-                            offsetX = 0f
-                            offsetY = 0f
                         },
                         onDrag = { change, drag ->
                             change.consume()
                             offsetX += drag.x
-                            offsetY += drag.y
+                            if (swipeMode == "bouncy") {
+                                offsetY += drag.y
+                            }
                         }
                     )
                 }
@@ -330,11 +358,35 @@ fun SwipeablePhotoCard(
         ) {
             Box(Modifier.fillMaxSize()) {
                 AsyncImage(
-                    model = photo.uri,
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(photo.uri)
+                        .videoFrameMillis(1000) // fetch frame at 1 second
+                        .crossfade(true)
+                        .build(),
                     contentDescription = photo.name,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                        .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                        .clickable { showPreview = true }
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            if (photo.isVideo) PhosphorIcons.Regular.Play else PhosphorIcons.Regular.MagnifyingGlass,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(if (photo.isVideo) "Preview Video" else "Preview", color = Color.White, fontSize = 12.sp)
+                    }
+                }
 
                 // Overlay hapus (→ kanan)
                 if (deleteAlpha > 0f) {
@@ -343,7 +395,11 @@ fun SwipeablePhotoCard(
                             .background(SoftPink.copy(alpha = deleteAlpha * 0.55f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("🗑  Hapus", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(PhosphorIcons.Regular.Trash, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
+                            Spacer(Modifier.width(10.dp))
+                            Text("Hapus", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
 
@@ -354,7 +410,11 @@ fun SwipeablePhotoCard(
                             .background(SageGreen.copy(alpha = keepAlpha * 0.55f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("💾  Simpan", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(PhosphorIcons.Regular.FloppyDisk, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
+                            Spacer(Modifier.width(10.dp))
+                            Text("Simpan", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
 
@@ -372,13 +432,59 @@ fun SwipeablePhotoCard(
                 // Animasi bintang (double tap)
                 if (showStar || starAlpha.value > 0f) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = "⭐",
-                            fontSize = (72 * starScale.value).sp,
-                            color = Color(0xFFFFB300).copy(alpha = starAlpha.value)
+                        Icon(
+                            PhosphorIcons.Regular.Star,
+                            contentDescription = null,
+                            tint = Color(0xFFFFB300).copy(alpha = starAlpha.value),
+                            modifier = Modifier.size((72 * starScale.value).dp)
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun MediaPreviewDialog(photo: GalleryPhoto, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.8f)
+                .background(Color.Black, RoundedCornerShape(16.dp)), 
+            contentAlignment = Alignment.Center
+        ) {
+            if (photo.isVideo) {
+                AndroidView(
+                    factory = { context ->
+                        VideoView(context).apply {
+                            setVideoURI(photo.uri)
+                            val mediaController = MediaController(context)
+                            mediaController.setAnchorView(this)
+                            setMediaController(mediaController)
+                            start()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                AsyncImage(
+                    model = photo.uri,
+                    contentDescription = photo.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit
+                )
+            }
+            
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+            ) {
+                Text("✕", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

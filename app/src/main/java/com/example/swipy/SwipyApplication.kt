@@ -2,6 +2,9 @@ package com.example.swipy
 
 import android.app.Application
 import androidx.work.*
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.decode.VideoFrameDecoder
 import com.example.swipy.worker.CleanReminderWorker
 import com.example.swipy.worker.StorageCheckWorker
 import com.example.swipy.worker.TrashPurgeWorker
@@ -9,7 +12,15 @@ import dagger.hilt.android.HiltAndroidApp
 import java.util.concurrent.TimeUnit
 
 @HiltAndroidApp
-class SwipyApplication : Application() {
+class SwipyApplication : Application(), ImageLoaderFactory {
+
+    override fun newImageLoader(): ImageLoader {
+        return ImageLoader.Builder(this)
+            .components {
+                add(VideoFrameDecoder.Factory())
+            }
+            .build()
+    }
 
     override fun onCreate() {
         super.onCreate()

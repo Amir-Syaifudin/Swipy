@@ -18,11 +18,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import androidx.compose.ui.text.font.FontWeight
+import com.example.swipy.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.swipy.ui.theme.DustyBlue
 import com.example.swipy.ui.theme.WarmWhite
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.SelectionBackground
+import androidx.compose.material3.Icon
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 
@@ -30,8 +37,9 @@ import kotlinx.coroutines.delay
 fun SplashScreen(onSplashFinished: () -> Unit) {
     var permissionChecked by remember { mutableStateOf(false) }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
+    // Request multiple permissions at once so both images AND videos are accessible
+    val multiplePermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
     ) {
         permissionChecked = true
     }
@@ -39,9 +47,17 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
     LaunchedEffect(Unit) {
         when {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
-                permissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
+                // Android 13+: request granular media permissions for images AND videos
+                multiplePermissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.READ_MEDIA_IMAGES,
+                        Manifest.permission.READ_MEDIA_VIDEO
+                    )
+                )
             else ->
-                permissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                multiplePermissionLauncher.launch(
+                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+                )
         }
     }
 
@@ -70,10 +86,15 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
                 modifier = Modifier
                     .size(120.dp)
                     .scale(scale.value)
-                    .background(DustyBlue, shape = CircleShape),
+                    .background(DustyBlue.copy(alpha = 0.12f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text("S", color = Color.White, fontSize = 56.sp, fontWeight = FontWeight.Bold)
+                Icon(
+                    imageVector = PhosphorIcons.Regular.SelectionBackground,
+                    contentDescription = "Swipy Logo",
+                    tint = DustyBlue,
+                    modifier = Modifier.size(64.dp)
+                )
             }
 
             Spacer(Modifier.height(24.dp))

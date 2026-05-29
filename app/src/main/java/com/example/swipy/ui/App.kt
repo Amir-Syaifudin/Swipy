@@ -25,30 +25,49 @@ fun App() {
         }
 
         composable("home") {
-            HomeScreen { route -> nav.navigate(route) }
+            HomeScreen { route -> 
+                if (route == "swipe/all?bucketName=Hari Ini") {
+                    nav.navigate("swipe/all/bouncy/Hari Ini")
+                } else {
+                    nav.navigate(route)
+                }
+            }
         }
 
-        composable("folderPicker") {
+        composable(
+            route = "folderPicker/{mediaType}",
+            arguments = listOf(navArgument("mediaType") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val mediaType = backStackEntry.arguments?.getString("mediaType") ?: "photo"
             FolderPickerScreen(
-                onFolderSelected = { bucketName -> 
-                    nav.navigate("swipe/$bucketName") 
+                mediaType = mediaType,
+                onFolderSelected = { bucketName, swipeMode -> 
+                    nav.navigate("swipe/$mediaType/$swipeMode/$bucketName") 
                 },
                 onBack = { nav.popBackStack() },
             )
         }
 
         composable(
-            route = "swipe/{bucketName}",
-            arguments = listOf(navArgument("bucketName") { type = NavType.StringType })
+            route = "swipe/{mediaType}/{swipeMode}/{bucketName}",
+            arguments = listOf(
+                navArgument("mediaType") { type = NavType.StringType },
+                navArgument("swipeMode") { type = NavType.StringType },
+                navArgument("bucketName") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
+            val mediaType = backStackEntry.arguments?.getString("mediaType") ?: "photo"
+            val swipeMode = backStackEntry.arguments?.getString("swipeMode") ?: "bouncy"
             val bucketName = backStackEntry.arguments?.getString("bucketName")
             SwipeScreen(
+                mediaType = mediaType,
+                swipeMode = swipeMode,
                 bucketName = bucketName,
                 onBack = { nav.popBackStack() },
                 onDone = { deleted, deletedSz, kept, keptSz, fav, favSz ->
                     nav.navigate(
                         "summary/$deleted/$deletedSz/$kept/$keptSz/$fav/$favSz"
-                    ) { popUpTo("swipe/{bucketName}") { inclusive = true } }
+                    ) { popUpTo("swipe/{mediaType}/{swipeMode}/{bucketName}") { inclusive = true } }
                 }
             )
         }

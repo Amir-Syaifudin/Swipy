@@ -1,5 +1,8 @@
 package com.example.swipy.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -20,8 +23,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import coil.request.videoFrameMillis
 import com.example.swipy.data.model.DeletedPhoto
 import com.example.swipy.ui.theme.*
 import com.example.swipy.ui.viewmodels.TrashViewModel
@@ -54,6 +60,23 @@ fun TrashScreen(
         )
     }
 
+    val deleteLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            viewModel.onDeleteConfirmed()
+        } else {
+            viewModel.onDeleteCancelled()
+        }
+    }
+
+    val pendingSender by viewModel.pendingActionSender.collectAsState()
+    LaunchedEffect(pendingSender) {
+        pendingSender?.let { sender ->
+            deleteLauncher.launch(IntentSenderRequest.Builder(sender).build())
+        }
+    }
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -76,7 +99,12 @@ fun TrashScreen(
         if (photos.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("🗑", fontSize = 64.sp)
+                    Icon(
+                        imageVector = PhosphorIcons.Regular.Trash,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = Color.Gray
+                    )
                     Spacer(Modifier.height(16.dp))
                     Text("Sampah kosong", style = MaterialTheme.typography.titleMedium, color = Color.Gray)
                 }
@@ -92,8 +120,9 @@ fun TrashScreen(
                 items(photos) { photo ->
                     TrashPhotoItem(
                         photo = photo,
-                        onDelete = { viewModel.restore(photo) } // Temporarily just remove from DB as "Delete/Restore"
-                    ) { viewModel.restore(photo) }
+                        onDelete = { viewModel.permanentDelete(photo) },
+                        onRestore = { viewModel.restore(photo) }
+                    )
                 }
             }
         }
@@ -108,7 +137,11 @@ private fun TrashPhotoItem(photo: DeletedPhoto, onDelete: () -> Unit, onRestore:
     ) {
         Box {
             AsyncImage(
-                model = photo.uri,
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(photo.uri)
+                    .videoFrameMillis(1000)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = photo.name,
                 modifier = Modifier.aspectRatio(1f).fillMaxWidth(),
                 contentScale = ContentScale.Crop

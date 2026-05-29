@@ -1,13 +1,17 @@
 package com.example.swipy.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Favorite
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.ArrowClockwise
+import com.adamglin.phosphoricons.regular.Heart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.adamglin.PhosphorIcons
 import com.example.swipy.data.model.FavoritePhoto
 import com.example.swipy.ui.theme.*
 import com.example.swipy.ui.viewmodels.FavoritesViewModel
@@ -30,13 +35,30 @@ fun FavoritesScreen(
     viewModel: FavoritesViewModel = hiltViewModel(),
 ) {
     val photos by viewModel.favorites.collectAsState()
+    
+    val removeLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            viewModel.onRemoveConfirmed()
+        } else {
+            viewModel.onRemoveCancelled()
+        }
+    }
+
+    val pendingSender by viewModel.pendingActionSender.collectAsState()
+    LaunchedEffect(pendingSender) {
+        pendingSender?.let { sender ->
+            removeLauncher.launch(IntentSenderRequest.Builder(sender).build())
+        }
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Favorit (${photos.size})", fontWeight = FontWeight.Medium) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back") }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = WarmWhite)
             )
@@ -46,7 +68,12 @@ fun FavoritesScreen(
         if (photos.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("❤️", fontSize = 64.sp)
+                    Icon(
+                        imageVector = PhosphorIcons.Regular.Heart,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = Color.Gray
+                    )
                     Spacer(Modifier.height(16.dp))
                     Text("Belum ada favorit", style = MaterialTheme.typography.titleMedium, color = Color.Gray)
                 }
@@ -84,7 +111,7 @@ private fun FavoritePhotoItem(photo: FavoritePhoto, onRemove: () -> Unit) {
                 onClick = onRemove,
                 modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(28.dp)
             ) {
-                Icon(Icons.Default.Favorite, contentDescription = "Remove", tint = SoftPink, modifier = Modifier.size(18.dp))
+                Icon(PhosphorIcons.Regular.ArrowClockwise, contentDescription = "Undo", tint = DustyBlue, modifier = Modifier.size(18.dp))
             }
         }
     }

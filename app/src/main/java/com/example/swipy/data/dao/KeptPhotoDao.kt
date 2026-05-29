@@ -1,6 +1,7 @@
 package com.example.swipy.data.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -13,4 +14,7 @@ interface KeptPhotoDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(photo: KeptPhoto)
+
+    @Delete
+    suspend fun delete(photo: KeptPhoto)
 }

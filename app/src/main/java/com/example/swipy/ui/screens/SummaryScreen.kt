@@ -1,18 +1,26 @@
 package com.example.swipy.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.Trash
+import com.adamglin.phosphoricons.regular.FloppyDisk
+import com.adamglin.phosphoricons.regular.Star
+import com.adamglin.phosphoricons.regular.Lightning
+import com.adamglin.phosphoricons.regular.Confetti
 import com.example.swipy.ui.theme.*
 import java.util.Locale
 
@@ -43,7 +51,7 @@ fun SummaryScreen(
                 title = { Text("Ringkasan", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(PhosphorIcons.Regular.ArrowLeft, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = WarmWhite)
@@ -88,8 +96,13 @@ fun SummaryScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("🎉", fontSize = 56.sp)
-                    Spacer(Modifier.height(8.dp))
+                    Icon(
+                        imageVector = PhosphorIcons.Regular.Confetti,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = DustyBlue
+                    )
+                    Spacer(Modifier.height(12.dp))
                     Text(
                         "Semua foto sudah ditinjau!",
                         fontSize = 15.sp,
@@ -102,7 +115,8 @@ fun SummaryScreen(
             // Dihapus
             item {
                 SummaryStatCard(
-                    emoji = "🗑",
+                    icon = PhosphorIcons.Regular.Trash,
+                    iconTint = SoftPink,
                     title = "Dihapus",
                     count = deletedCount,
                     size = formatSize(deletedSize),
@@ -113,7 +127,8 @@ fun SummaryScreen(
             // Disimpan
             item {
                 SummaryStatCard(
-                    emoji = "💾",
+                    icon = PhosphorIcons.Regular.FloppyDisk,
+                    iconTint = SageGreen,
                     title = "Disimpan",
                     count = keptCount,
                     size = formatSize(keptSize),
@@ -125,7 +140,8 @@ fun SummaryScreen(
             if (favoriteCount > 0) {
                 item {
                     SummaryStatCard(
-                        emoji = "⭐",
+                        icon = PhosphorIcons.Regular.Star,
+                        iconTint = Color(0xFFFFB300),
                         title = "Favorit",
                         count = favoriteCount,
                         size = formatSize(favoriteSize),
@@ -153,12 +169,21 @@ fun SummaryScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(
-                                "💡 Ruang yang dibebaskan",
-                                fontSize = 14.sp,
-                                color = DustyBlue,
-                                fontWeight = FontWeight.Medium
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    PhosphorIcons.Regular.Lightning,
+                                    contentDescription = null,
+                                    tint = DustyBlue,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    "Ruang yang dibebaskan",
+                                    fontSize = 14.sp,
+                                    color = DustyBlue,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
                             Text(
                                 formatSize(deletedSize),
                                 fontSize = 16.sp,
@@ -175,7 +200,8 @@ fun SummaryScreen(
 
 @Composable
 private fun SummaryStatCard(
-    emoji: String,
+    icon: ImageVector,
+    iconTint: Color,
     title: String,
     count: Int,
     size: String,
@@ -195,7 +221,14 @@ private fun SummaryStatCard(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(emoji, fontSize = 28.sp)
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(iconTint.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(22.dp))
+                }
                 Spacer(Modifier.width(14.dp))
                 Text(
                     title,

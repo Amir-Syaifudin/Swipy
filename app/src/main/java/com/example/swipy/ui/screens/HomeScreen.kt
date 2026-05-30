@@ -146,7 +146,7 @@ fun HomeScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onNavigate("swipe/all?bucketName=Hari Ini") },
+                    .clickable { onNavigate("swipe/all?bucketName=Hari_Ini") },
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = SageGreen.copy(alpha = 0.15f)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)

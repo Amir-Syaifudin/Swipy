@@ -65,9 +65,9 @@ class SwipeViewModel @Inject constructor(
 
     fun loadPhotos(mediaType: String, bucketName: String?) {
         viewModelScope.launch {
-            isTodaySession = bucketName == "Hari Ini"
+            isTodaySession = bucketName == "Hari_Ini"
             val isToday = isTodaySession
-            val actualBucket = if (bucketName == "Hari Ini" || bucketName == "Semua Foto" || bucketName == "Semua Video") null else bucketName
+            val actualBucket = if (bucketName == "Hari_Ini" || bucketName == "Semua Foto" || bucketName == "Semua Video") null else bucketName
             val photos = galleryRepository.getMedia(mediaType, actualBucket, isToday)
             
             // For "Hari Ini" session, we want to see everything today, 

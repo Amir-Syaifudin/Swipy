@@ -26,8 +26,8 @@ fun App() {
 
         composable("home") {
             HomeScreen { route -> 
-                if (route == "swipe/all?bucketName=Hari Ini") {
-                    nav.navigate("swipe/all/bouncy/Hari Ini")
+                if (route == "swipe/all?bucketName=Hari_Ini") {
+                    nav.navigate("swipe/all/bouncy/Hari_Ini")
                 } else {
                     nav.navigate(route)
                 }

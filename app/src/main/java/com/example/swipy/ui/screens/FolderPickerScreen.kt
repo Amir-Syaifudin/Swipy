@@ -14,6 +14,7 @@ import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
 import com.adamglin.phosphoricons.regular.Folder
+import com.adamglin.phosphoricons.regular.CaretRight
 import com.adamglin.phosphoricons.regular.SelectionBackground
 import com.adamglin.phosphoricons.regular.ArrowsLeftRight
 import androidx.compose.ui.Alignment
@@ -292,7 +293,7 @@ private fun FolderCard(bucketName: String, count: Int, mediaType: String, onClic
                 Text(bucketName, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = Color(0xFF2C2C2C))
                 Text("$count ${if(mediaType == "video") "video" else "foto"}", fontSize = 13.sp, color = Color.Gray)
             }
-            Text("→", color = DustyBlue, fontSize = 18.sp)
+            Icon(PhosphorIcons.Regular.CaretRight, contentDescription = null, tint = DustyBlue, modifier = Modifier.size(18.dp))
         }
     }
 }

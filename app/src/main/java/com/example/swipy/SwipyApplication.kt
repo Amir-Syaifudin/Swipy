@@ -9,6 +9,7 @@ import com.example.swipy.worker.CleanReminderWorker
 import com.example.swipy.worker.StorageCheckWorker
 import com.example.swipy.worker.TrashPurgeWorker
 import dagger.hilt.android.HiltAndroidApp
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 @HiltAndroidApp
@@ -30,17 +31,15 @@ class SwipyApplication : Application(), ImageLoaderFactory {
     private fun scheduleWorkers() {
         val workManager = WorkManager.getInstance(this)
 
-        // Weekly clean reminder — every 7 days
-        val weeklyConstraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
+        // Daily clean reminder at 10 PM
+        val dailyReminderRequest = PeriodicWorkRequestBuilder<CleanReminderWorker>(1, TimeUnit.DAYS)
+            .setInitialDelay(calculateDelayTo10PM(), TimeUnit.MILLISECONDS)
             .build()
 
         workManager.enqueueUniquePeriodicWork(
             CleanReminderWorker.WORK_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
-            PeriodicWorkRequestBuilder<CleanReminderWorker>(7, TimeUnit.DAYS)
-                .setConstraints(weeklyConstraints)
-                .build(),
+            ExistingPeriodicWorkPolicy.UPDATE,
+            dailyReminderRequest
         )
 
         // Daily storage check
@@ -58,5 +57,20 @@ class SwipyApplication : Application(), ImageLoaderFactory {
             PeriodicWorkRequestBuilder<TrashPurgeWorker>(1, TimeUnit.DAYS)
                 .build(),
         )
+    }
+
+    private fun calculateDelayTo10PM(): Long {
+        val calendar = Calendar.getInstance()
+        val now = calendar.timeInMillis
+        
+        calendar.set(Calendar.HOUR_OF_DAY, 22)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        
+        if (calendar.timeInMillis <= now) {
+            calendar.add(Calendar.DAY_OF_YEAR, 1)
+        }
+        
+        return calendar.timeInMillis - now
     }
 }

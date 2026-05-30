@@ -1,9 +1,11 @@
 package com.example.swipy.ui.screens
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -11,11 +13,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import com.adamglin.PhosphorIcons
-import com.adamglin.phosphoricons.Regular
-import com.adamglin.phosphoricons.regular.ArrowLeft
-import com.adamglin.phosphoricons.regular.ArrowClockwise
-import com.adamglin.phosphoricons.regular.Trash
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,9 +25,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import coil.request.videoFrameMillis
+import com.adamglin.PhosphorIcons
+import com.adamglin.phosphoricons.Regular
+import com.adamglin.phosphoricons.regular.ArrowLeft
+import com.adamglin.phosphoricons.regular.Trash
+import com.adamglin.phosphoricons.regular.ArrowClockwise
 import com.example.swipy.data.model.DeletedPhoto
 import com.example.swipy.ui.theme.*
 import com.example.swipy.ui.viewmodels.TrashViewModel
+import com.example.swipy.ui.components.MediaPreviewDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +43,16 @@ fun TrashScreen(
 ) {
     val photos by viewModel.trashedPhotos.collectAsState()
     var showConfirmDialog by remember { mutableStateOf(value = false) }
+    var previewPhoto by remember { mutableStateOf<DeletedPhoto?>(null) }
+
+    if (previewPhoto != null) {
+        MediaPreviewDialog(
+            uri = Uri.parse(previewPhoto!!.uri),
+            isVideo = previewPhoto!!.isVideo,
+            name = previewPhoto!!.name,
+            onDismiss = { previewPhoto = null }
+        )
+    }
 
     if (showConfirmDialog) {
         AlertDialog(
@@ -117,11 +130,12 @@ fun TrashScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(vertical = 12.dp)
             ) {
-                items(photos) { photo ->
+                items(photos, key = { it.uri }) { photo ->
                     TrashPhotoItem(
                         photo = photo,
                         onDelete = { viewModel.permanentDelete(photo) },
-                        onRestore = { viewModel.restore(photo) }
+                        onRestore = { viewModel.restore(photo) },
+                        onPreview = { previewPhoto = photo }
                     )
                 }
             }
@@ -130,8 +144,9 @@ fun TrashScreen(
 }
 
 @Composable
-private fun TrashPhotoItem(photo: DeletedPhoto, onDelete: () -> Unit, onRestore: () -> Unit) {
+private fun TrashPhotoItem(photo: DeletedPhoto, onDelete: () -> Unit, onRestore: () -> Unit, onPreview: () -> Unit) {
     Card(
+        modifier = Modifier.clickable { onPreview() },
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {

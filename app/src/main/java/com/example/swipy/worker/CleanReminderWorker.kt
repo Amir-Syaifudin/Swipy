@@ -7,6 +7,9 @@ import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 
+import com.example.swipy.data.UserPreferences
+import kotlinx.coroutines.flow.first
+
 class CleanReminderWorker(
     context: Context,
     params: WorkerParameters,
@@ -14,13 +17,18 @@ class CleanReminderWorker(
 
     companion object {
         const val CHANNEL_ID = "swipy_reminder"
-        const val WORK_NAME = "weekly_reminder"
+        const val WORK_NAME = "daily_reminder"
     }
 
     override suspend fun doWork(): Result {
+        val userPrefs = UserPreferences(applicationContext)
+        val enabled = userPrefs.dailyNotifEnabled.first()
+        
+        if (!enabled) return Result.success()
+
         showNotification(
-            title = "Waktunya bersihkan galeri! 🧹",
-            message = "Ada foto yang bisa kamu hapus hari ini. Swipe sekarang!"
+            title = "Waktunya bersihkan galeri hari ini! 🧹",
+            message = "Mari kita buang foto yang tidak perlu agar device tetap lega."
         )
         return Result.success()
     }

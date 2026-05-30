@@ -45,20 +45,15 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
     }
 
     LaunchedEffect(Unit) {
-        when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
-                // Android 13+: request granular media permissions for images AND videos
-                multiplePermissionLauncher.launch(
-                    arrayOf(
-                        Manifest.permission.READ_MEDIA_IMAGES,
-                        Manifest.permission.READ_MEDIA_VIDEO
-                    )
-                )
-            else ->
-                multiplePermissionLauncher.launch(
-                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
-                )
+        val permissions = mutableListOf<String>()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
+            permissions.add(Manifest.permission.READ_MEDIA_VIDEO)
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
+        multiplePermissionLauncher.launch(permissions.toTypedArray())
     }
 
     val scale = remember { Animatable(0.5f) }

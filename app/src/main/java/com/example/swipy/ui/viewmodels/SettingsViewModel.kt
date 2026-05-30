@@ -24,6 +24,9 @@ class SettingsViewModel @Inject constructor(
     val weeklyNotifEnabled: StateFlow<Boolean> = userPreferences.weeklyNotifEnabled
         .stateIn(viewModelScope, SharingStarted.Lazily, initialValue = true)
 
+    val dailyNotifEnabled: StateFlow<Boolean> = userPreferences.dailyNotifEnabled
+        .stateIn(viewModelScope, SharingStarted.Lazily, initialValue = true)
+
     val dontShowModePicker: StateFlow<Boolean> = userPreferences.dontShowModePicker
         .stateIn(viewModelScope, SharingStarted.Lazily, initialValue = false)
 
@@ -45,6 +48,12 @@ class SettingsViewModel @Inject constructor(
     fun setWeeklyNotif(enabled: Boolean) {
         viewModelScope.launch {
             userPreferences.setWeeklyNotif(enabled)
+        }
+    }
+
+    fun setDailyNotif(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferences.setDailyNotif(enabled)
         }
     }
 

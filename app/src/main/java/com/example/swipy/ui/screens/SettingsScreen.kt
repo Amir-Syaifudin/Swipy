@@ -30,6 +30,7 @@ fun SettingsScreen(
     val selectedAccent by viewModel.selectedAccent.collectAsState()
     val storageReminder by viewModel.storageReminderEnabled.collectAsState()
     val weeklyNotif by viewModel.weeklyNotifEnabled.collectAsState()
+    val dailyNotif by viewModel.dailyNotifEnabled.collectAsState()
     val dontShowPicker by viewModel.dontShowModePicker.collectAsState()
     val defaultMode by viewModel.defaultSwipeMode.collectAsState()
 
@@ -92,6 +93,13 @@ fun SettingsScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(modifier = Modifier.padding(8.dp)) {
+                        ToggleRow(
+                            title = "Pengingat harian",
+                            subtitle = "Setiap hari pukul 22.00",
+                            checked = dailyNotif,
+                            onCheck = { viewModel.setDailyNotif(it) }
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                         ToggleRow(
                             title = "Pengingat mingguan",
                             subtitle = "Setiap Senin pukul 10.00",

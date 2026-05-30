@@ -13,6 +13,7 @@ class UserPreferences(private val context: Context) {
 
     companion object {
         val WEEKLY_NOTIF_ENABLED = booleanPreferencesKey("weekly_notif_enabled")
+        val DAILY_NOTIF_ENABLED = booleanPreferencesKey("daily_notif_enabled")
         val STORAGE_REMINDER_ENABLED = booleanPreferencesKey("storage_reminder_enabled")
         val SELECTED_ACCENT = intPreferencesKey("selected_accent") // 0=DustyBlue,1=SoftPink,2=SageGreen
         val DONT_SHOW_MODE_PICKER = booleanPreferencesKey("dont_show_mode_picker")
@@ -21,6 +22,9 @@ class UserPreferences(private val context: Context) {
 
     val weeklyNotifEnabled: Flow<Boolean> = context.dataStore.data
         .map { it[WEEKLY_NOTIF_ENABLED] ?: true }
+
+    val dailyNotifEnabled: Flow<Boolean> = context.dataStore.data
+        .map { it[DAILY_NOTIF_ENABLED] ?: true }
 
     val storageReminderEnabled: Flow<Boolean> = context.dataStore.data
         .map { it[STORAGE_REMINDER_ENABLED] ?: true }
@@ -36,6 +40,10 @@ class UserPreferences(private val context: Context) {
 
     suspend fun setWeeklyNotif(enabled: Boolean) {
         context.dataStore.edit { it[WEEKLY_NOTIF_ENABLED] = enabled }
+    }
+
+    suspend fun setDailyNotif(enabled: Boolean) {
+        context.dataStore.edit { it[DAILY_NOTIF_ENABLED] = enabled }
     }
 
     suspend fun setStorageReminder(enabled: Boolean) {

@@ -11,7 +11,7 @@ import com.example.swipy.data.model.KeptPhoto
 
 @Database(
     entities = [DeletedPhoto::class, FavoritePhoto::class, KeptPhoto::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

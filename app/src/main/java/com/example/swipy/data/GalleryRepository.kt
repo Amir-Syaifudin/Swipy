@@ -139,12 +139,29 @@ class GalleryRepository @Inject constructor(
     suspend fun deletePhotos(uris: List<Uri>): IntentSender? = withContext(Dispatchers.IO) {
         if (uris.isEmpty()) return@withContext null
 
+        // Filter URIs that actually still exist in MediaStore to avoid IllegalArgumentException
+        val validUris = uris.filter { uri ->
+            try {
+                context.contentResolver.query(uri, arrayOf(MediaStore.MediaColumns._ID), null, null, null)?.use { cursor ->
+                    cursor.moveToFirst()
+                } ?: false
+            } catch (e: Exception) {
+                false
+            }
+        }
+
+        if (validUris.isEmpty()) return@withContext null
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // API 30+ — sistem akan tampilkan dialog konfirmasi penghapusan
-            MediaStore.createDeleteRequest(context.contentResolver, uris).intentSender
+            try {
+                MediaStore.createDeleteRequest(context.contentResolver, validUris).intentSender
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
         } else {
             // API < 30 — hapus langsung
-            uris.forEach { uri ->
+            validUris.forEach { uri ->
                 try { context.contentResolver.delete(uri, null, null) }
                 catch (e: Exception) { e.printStackTrace() }
             }

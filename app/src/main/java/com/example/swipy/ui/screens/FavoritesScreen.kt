@@ -1,8 +1,10 @@
 package com.example.swipy.ui.screens
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -27,6 +29,7 @@ import com.adamglin.PhosphorIcons
 import com.example.swipy.data.model.FavoritePhoto
 import com.example.swipy.ui.theme.*
 import com.example.swipy.ui.viewmodels.FavoritesViewModel
+import com.example.swipy.ui.components.MediaPreviewDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,6 +38,16 @@ fun FavoritesScreen(
     viewModel: FavoritesViewModel = hiltViewModel(),
 ) {
     val photos by viewModel.favorites.collectAsState()
+    var previewPhoto by remember { mutableStateOf<FavoritePhoto?>(null) }
+
+    if (previewPhoto != null) {
+        MediaPreviewDialog(
+            uri = Uri.parse(previewPhoto!!.uri),
+            isVideo = previewPhoto!!.isVideo,
+            name = previewPhoto!!.name,
+            onDismiss = { previewPhoto = null }
+        )
+    }
     
     val removeLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
@@ -87,7 +100,11 @@ fun FavoritesScreen(
                 contentPadding = PaddingValues(vertical = 12.dp)
             ) {
                 items(photos) { photo ->
-                    FavoritePhotoItem(photo = photo) { viewModel.remove(photo) }
+                    FavoritePhotoItem(
+                        photo = photo,
+                        onPreview = { previewPhoto = photo },
+                        onRemove = { viewModel.remove(photo) }
+                    )
                 }
             }
         }
@@ -95,8 +112,9 @@ fun FavoritesScreen(
 }
 
 @Composable
-private fun FavoritePhotoItem(photo: FavoritePhoto, onRemove: () -> Unit) {
+private fun FavoritePhotoItem(photo: FavoritePhoto, onPreview: () -> Unit, onRemove: () -> Unit) {
     Card(
+        modifier = Modifier.clickable { onPreview() },
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {

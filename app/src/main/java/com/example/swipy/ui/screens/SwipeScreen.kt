@@ -11,6 +11,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import com.adamglin.PhosphorIcons
 import com.adamglin.phosphoricons.Regular
 import com.adamglin.phosphoricons.regular.ArrowLeft
@@ -19,6 +20,12 @@ import com.adamglin.phosphoricons.regular.Trash
 import com.adamglin.phosphoricons.regular.FloppyDisk
 import com.adamglin.phosphoricons.regular.Star
 import com.adamglin.phosphoricons.regular.Play
+import com.adamglin.phosphoricons.regular.Pause
+import com.adamglin.phosphoricons.regular.SkipBack
+import com.adamglin.phosphoricons.regular.SkipForward
+import com.adamglin.phosphoricons.regular.Confetti
+import com.adamglin.phosphoricons.regular.MusicNote
+import com.adamglin.phosphoricons.regular.MusicNotes
 import com.adamglin.phosphoricons.regular.MagnifyingGlass
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -40,6 +47,8 @@ import coil.request.videoFrameMillis
 import com.example.swipy.data.GalleryPhoto
 import com.example.swipy.ui.theme.*
 import com.example.swipy.ui.viewmodels.SwipeViewModel
+import com.example.swipy.ui.viewmodels.MusicViewModel
+import com.example.swipy.ui.components.MediaPreviewDialog
 import java.util.Locale
 import kotlin.math.roundToInt
 import androidx.compose.ui.window.Dialog
@@ -55,7 +64,8 @@ fun SwipeScreen(
     bucketName: String?,
     onBack: () -> Unit = {},
     onDone: (Int, Long, Int, Long, Int, Long) -> Unit = { _, _, _, _, _, _ -> },
-    viewModel: SwipeViewModel = hiltViewModel()
+    viewModel: SwipeViewModel = hiltViewModel(),
+    musicViewModel: MusicViewModel = hiltViewModel()
 ) {
     LaunchedEffect(bucketName, mediaType) {
         viewModel.loadPhotos(mediaType, if (bucketName == "Semua Foto" || bucketName == "Semua Video") null else bucketName)
@@ -69,6 +79,8 @@ fun SwipeScreen(
     val favoriteCount  by viewModel.favoriteCount.collectAsState()
     val favoriteSize   by viewModel.favoriteSize.collectAsState()
     val pendingFavoriteSender by viewModel.pendingFavoriteSender.collectAsState()
+
+    var showMusicDialog by remember { mutableStateOf(false) }
 
     // Capture stats at the time Selesai is pressed (sebelum navigate)
     var savedStats by remember { mutableStateOf<Array<Long>?>(null) }
@@ -155,6 +167,13 @@ fun SwipeScreen(
         },
         containerColor = WarmWhite
     ) { padding ->
+        if (showMusicDialog) {
+            MusicPlayerDialog(
+                musicViewModel = musicViewModel,
+                onDismiss = { showMusicDialog = false }
+            )
+        }
+
         if (photos.isEmpty()) {
             // ── Layar Selesai (semua foto habis di-swipe) ──────────────
             Box(
@@ -162,21 +181,13 @@ fun SwipeScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("🎉", fontSize = 64.sp)
+                    Icon(PhosphorIcons.Regular.Confetti, contentDescription = null, tint = DustyBlue, modifier = Modifier.size(64.dp))
                     Spacer(Modifier.height(16.dp))
                     Text(
                         "Semua foto sudah ditinjau!",
                         style = MaterialTheme.typography.headlineSmall,
                         color = DustyBlue
                     )
-                    Spacer(Modifier.height(24.dp))
-
-                    SummaryItem("🗑", "Dihapus",  deletedCount,  formatSize(deletedSize),  SoftPink)
-                    SummaryItem("💾", "Disimpan", keptCount,     formatSize(keptSize),     SageGreen)
-                    if (favoriteCount > 0) {
-                        SummaryItem("⭐", "Favorit", favoriteCount, formatSize(favoriteSize), Color(0xFFFFB300))
-                    }
-
                     Spacer(Modifier.height(32.dp))
                     Button(
                         onClick = { onSelesai() },
@@ -184,7 +195,7 @@ fun SwipeScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = DustyBlue),
                         modifier = Modifier.fillMaxWidth(0.65f).height(52.dp)
                     ) {
-                        Text("Selesai", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("Lihat Ringkasan", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -202,24 +213,35 @@ fun SwipeScreen(
                 // Stats row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(PhosphorIcons.Regular.FloppyDisk, contentDescription = null, tint = SageGreen, modifier = Modifier.size(14.dp))
                         Spacer(Modifier.width(4.dp))
                         Text("$keptCount simpan", color = SageGreen, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     }
-                    if (favoriteCount > 0) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                    
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (favoriteCount > 0) {
                             Icon(PhosphorIcons.Regular.Star, contentDescription = null, tint = Color(0xFFFFB300), modifier = Modifier.size(14.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("$favoriteCount favorit", color = Color(0xFFFFB300), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Text("$favoriteCount", color = Color(0xFFFFB300), fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                            Spacer(Modifier.width(12.dp))
+                        }
+                        
+                        IconButton(
+                            onClick = { showMusicDialog = true },
+                            modifier = Modifier.size(30.dp).background(DustyBlue.copy(alpha = 0.15f), CircleShape)
+                        ) {
+                            Icon(PhosphorIcons.Regular.MusicNote, null, tint = DustyBlue, modifier = Modifier.size(14.dp))
                         }
                     }
+                    
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(PhosphorIcons.Regular.Trash, contentDescription = null, tint = SoftPink, modifier = Modifier.size(14.dp))
-                        Spacer(Modifier.width(4.dp))
                         Text("$deletedCount hapus", color = SoftPink, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Spacer(Modifier.width(4.dp))
+                        Icon(PhosphorIcons.Regular.Trash, contentDescription = null, tint = SoftPink, modifier = Modifier.size(14.dp))
                     }
                 }
 
@@ -258,24 +280,7 @@ fun SwipeScreen(
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-@Composable
-fun SummaryItem(icon: String, label: String, count: Int, size: String, color: Color) {
-    Row(
-        modifier = Modifier.fillMaxWidth(0.7f).padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(icon, fontSize = 18.sp)
-            Spacer(Modifier.width(12.dp))
-            Text(label, color = Color.Gray, fontSize = 16.sp)
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            Text("$count Foto", color = color, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(size, color = Color.Gray, fontSize = 12.sp)
-        }
-    }
-}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -314,7 +319,12 @@ fun SwipeablePhotoCard(
     }
 
     if (showPreview) {
-        MediaPreviewDialog(photo = photo, onDismiss = { showPreview = false })
+        MediaPreviewDialog(
+            uri = photo.uri,
+            isVideo = photo.isVideo,
+            name = photo.name,
+            onDismiss = { showPreview = false }
+        )
     }
 
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -445,47 +455,92 @@ fun SwipeablePhotoCard(
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 @Composable
-fun MediaPreviewDialog(photo: GalleryPhoto, onDismiss: () -> Unit) {
+fun MusicPlayerDialog(
+    musicViewModel: MusicViewModel,
+    onDismiss: () -> Unit
+) {
+    val currentTrack by musicViewModel.currentTrack.collectAsState()
+    val currentArtist by musicViewModel.currentArtist.collectAsState()
+    val isPlaying by musicViewModel.isPlaying.collectAsState()
+    val musicSource by musicViewModel.musicSource.collectAsState()
+    
     Dialog(onDismissRequest = onDismiss) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.8f)
-                .background(Color.Black, RoundedCornerShape(16.dp)), 
-            contentAlignment = Alignment.Center
+        Card(
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+            elevation = CardDefaults.cardElevation(8.dp)
         ) {
-            if (photo.isVideo) {
-                AndroidView(
-                    factory = { context ->
-                        VideoView(context).apply {
-                            setVideoURI(photo.uri)
-                            val mediaController = MediaController(context)
-                            mediaController.setAnchorView(this)
-                            setMediaController(mediaController)
-                            start()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
+            Column(modifier = Modifier.padding(24.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Sedang Diputar", color = Color.Gray, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(20.dp))
+                
+                Box(
+                    modifier = Modifier
+                        .size(88.dp)
+                        .background(
+                            color = if (musicSource == "Spotify") Color(0xFF1DB954).copy(alpha = 0.15f) else DustyBlue.copy(alpha = 0.15f), 
+                            shape = RoundedCornerShape(22.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (musicSource == "Spotify") PhosphorIcons.Regular.MusicNotes else PhosphorIcons.Regular.MusicNote, 
+                        contentDescription = null, 
+                        tint = if (musicSource == "Spotify") Color(0xFF1DB954) else DustyBlue,
+                        modifier = Modifier.size(44.dp)
+                    )
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                Text(
+                    text = currentTrack, 
+                    fontWeight = FontWeight.ExtraBold, 
+                    fontSize = 19.sp, 
+                    color = Color(0xFF1E1E1E),
+                    maxLines = 1,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
-            } else {
-                AsyncImage(
-                    model = photo.uri,
-                    contentDescription = photo.name,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = currentArtist, 
+                    fontSize = 14.sp, 
+                    color = Color(0xFF757575),
+                    maxLines = 1,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
-            }
-            
-            IconButton(
-                onClick = onDismiss,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(20.dp))
-            ) {
-                Text("✕", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                
+                Spacer(Modifier.height(28.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { musicViewModel.previousTrack() }, modifier = Modifier.size(48.dp)) {
+                        Icon(PhosphorIcons.Regular.SkipBack, null, tint = Color(0xFF424242), modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(Modifier.width(20.dp))
+                    IconButton(
+                        onClick = { musicViewModel.togglePlayPause() },
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(if (musicSource == "Spotify") Color(0xFF1DB954) else DustyBlue, CircleShape)
+                    ) {
+                        Icon(if (isPlaying) PhosphorIcons.Regular.Pause else PhosphorIcons.Regular.Play, null, tint = Color.White, modifier = Modifier.size(32.dp))
+                    }
+                    Spacer(Modifier.width(20.dp))
+                    IconButton(onClick = { musicViewModel.nextTrack() }, modifier = Modifier.size(48.dp)) {
+                        Icon(PhosphorIcons.Regular.SkipForward, null, tint = Color(0xFF424242), modifier = Modifier.size(24.dp))
+                    }
+                }
             }
         }
     }
 }
+
+// MediaPreviewDialog moved to common components

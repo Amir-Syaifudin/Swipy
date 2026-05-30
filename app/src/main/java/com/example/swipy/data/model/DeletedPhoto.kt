@@ -8,5 +8,6 @@ data class DeletedPhoto(
     @PrimaryKey val uri: String,
     val name: String,
     val size: Long,
+    val isVideo: Boolean = false,
     val dateAdded: Long = System.currentTimeMillis()
 )

@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 data class FavoritePhoto(
     @PrimaryKey val uri: String,
     val name: String,
+    val isVideo: Boolean = false,
     val dateAdded: Long = System.currentTimeMillis()
 )

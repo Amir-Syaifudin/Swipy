@@ -96,7 +96,7 @@ class SwipeViewModel @Inject constructor(
         if (isTodaySession) {
             viewModelScope.launch {
                 deletedPhotoDao.insert(
-                    DeletedPhoto(uri = photo.uri.toString(), name = photo.name, size = photo.size)
+                    DeletedPhoto(uri = photo.uri.toString(), name = photo.name, size = photo.size, isVideo = photo.isVideo)
                 )
             }
         }
@@ -110,10 +110,9 @@ class SwipeViewModel @Inject constructor(
         _keptSize.value  += photo.size
         actionHistory.add(SwipeAction(photo, SwipeActionType.KEEP))
         
-        if (isTodaySession) {
-            viewModelScope.launch {
-                keptPhotoDao.insert(KeptPhoto(uri = photo.uri.toString()))
-            }
+        // Selalu simpan ke DB agar foto tidak muncul lagi di sesi manapun
+        viewModelScope.launch {
+            keptPhotoDao.insert(KeptPhoto(uri = photo.uri.toString()))
         }
         
         removePhotoFromList(photo)
@@ -134,7 +133,13 @@ class SwipeViewModel @Inject constructor(
     fun onFavoriteConfirmed() {
         // After user confirms system favorite, persist locally
         viewModelScope.launch {
-            favoritePhotoDao.insert(FavoritePhoto(uri = currentPendingPhoto?.uri?.toString() ?: return@launch, name = currentPendingPhoto?.name ?: ""))
+            favoritePhotoDao.insert(
+                FavoritePhoto(
+                    uri = currentPendingPhoto?.uri?.toString() ?: return@launch,
+                    name = currentPendingPhoto?.name ?: "",
+                    isVideo = currentPendingPhoto?.isVideo ?: false
+                )
+            )
         }
         _favoriteCount.value += 1
         _favoriteSize.value  += currentPendingPhoto?.size ?: 0L
@@ -170,10 +175,9 @@ class SwipeViewModel @Inject constructor(
                     keptQueue.remove(lastAction.photo)
                     _keptCount.value -= 1
                     _keptSize.value  -= lastAction.photo.size
-                    if (isTodaySession) {
-                        viewModelScope.launch {
-                            keptPhotoDao.delete(KeptPhoto(uri = lastAction.photo.uri.toString()))
-                        }
+                    // Hapus dari DB agar bisa muncul lagi setelah undo
+                    viewModelScope.launch {
+                        keptPhotoDao.delete(KeptPhoto(uri = lastAction.photo.uri.toString()))
                     }
                 }
                 SwipeActionType.FAVORITE -> {
@@ -199,7 +203,7 @@ class SwipeViewModel @Inject constructor(
             // Simpan log ke Room
             deleteQueue.forEach { photo ->
                 deletedPhotoDao.insert(
-                    DeletedPhoto(uri = photo.uri.toString(), name = photo.name, size = photo.size)
+                    DeletedPhoto(uri = photo.uri.toString(), name = photo.name, size = photo.size, isVideo = photo.isVideo)
                 )
             }
             keptQueue.forEach { photo ->
